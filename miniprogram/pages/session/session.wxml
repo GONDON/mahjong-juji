@@ -1,9 +1,75 @@
 <view class="page">
   <view wx:if="{{loading}}" class="hint">加载中…</view>
   <block wx:else>
-    <text class="title">夜局详情（占位）</text>
-    <text class="sub" wx:if="{{roomCode}}">房间码 {{roomCode}}</text>
-    <text class="sub">状态 {{status}} · 已结算 {{cycleCount}} 轮</text>
-    <text class="sub">流水与轮次明细将在后续任务实现</text>
+    <view class="header">
+      <text class="title">夜局详情</text>
+      <text class="meta">房间码 {{roomCode}}</text>
+      <text class="meta">面值 {{chipValueYuan}} 元/牌 · {{statusLabel}}</text>
+    </view>
+
+    <view wx:if="{{cycles.length === 0}}" class="empty">暂无已结算轮次</view>
+
+    <view
+      wx:for="{{cycles}}"
+      wx:key="index"
+      class="cycle"
+    >
+      <view
+        class="cycle-head"
+        data-index="{{item.index}}"
+        bindtap="onToggleCycle"
+      >
+        <text class="cycle-title">第 {{item.index}} 轮</text>
+        <text class="cycle-toggle">{{item.expanded ? '收起' : '展开流水'}}</text>
+      </view>
+
+      <view class="settle-list">
+        <view
+          wx:for="{{item.settlements}}"
+          wx:for-item="row"
+          wx:key="playerId"
+          class="settle-row"
+        >
+          <text class="settle-name">{{row.nickname}}</text>
+          <text class="settle-delta">牌 {{row.chipDelta >= 0 ? '+' : ''}}{{row.chipDelta}}</text>
+          <text class="settle-yuan {{row.yuan >= 0 ? 'up' : 'down'}}">
+            {{row.yuan >= 0 ? '+' : ''}}{{row.yuan}} 元
+          </text>
+        </view>
+      </view>
+
+      <view wx:if="{{item.expanded}}" class="hands">
+        <view wx:if="{{item.hands.length === 0}}" class="empty-sm">本轮无局记录</view>
+        <view
+          wx:for="{{item.hands}}"
+          wx:for-item="hand"
+          wx:key="index"
+          class="hand"
+        >
+          <text class="hand-title">
+            第 {{hand.index}} 局 · 庄 {{hand.dealer}}（连{{hand.streak}}）
+            <text wx:if="{{hand.liuju}}"> · 流局</text>
+          </text>
+          <view wx:if="{{hand.hus.length === 0 && !hand.liuju}}" class="empty-sm">无胡</view>
+          <view
+            wx:for="{{hand.hus}}"
+            wx:for-item="hu"
+            wx:for-index="huIdx"
+            wx:key="huIdx"
+            class="hu-row"
+          >
+            <text class="hu-main">{{hu.winner}} {{hu.winType}} {{hu.fan}}</text>
+            <text class="hu-pay">每人付 {{hu.perPayer}} 牌</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <button
+      wx:if="{{canEnd}}"
+      class="end-btn"
+      bindtap="onEndSession"
+      disabled="{{busy}}"
+    >结束夜局</button>
   </block>
 </view>

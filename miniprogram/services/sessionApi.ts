@@ -51,6 +51,7 @@ export interface SettledCycle {
 
 export interface HandRecord {
   index: number
+  cycleIndex: number
   dealerId: PlayerId
   streak: number
   firstHuId: PlayerId | null
@@ -257,6 +258,7 @@ export async function startCycle(
   doc.status = 'playing'
   doc.hands.push({
     index: doc.hands.length + 1,
+    cycleIndex,
     dealerId: dealer.dealerId,
     streak: dealer.streak,
     firstHuId: null,
@@ -330,6 +332,7 @@ export async function liuju(sessionId: string): Promise<void> {
   entry.undoStack = []
   doc.hands.push({
     index: doc.hands.length + 1,
+    cycleIndex: doc.currentCycle!.index,
     dealerId: next.dealer.dealerId,
     streak: next.dealer.streak,
     firstHuId: null,
