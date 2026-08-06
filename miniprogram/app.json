@@ -4,6 +4,7 @@
     "pages/create/create",
     "pages/dealer-pick/dealer-pick",
     "pages/battle/battle",
+    "pages/session/session",
     "pages/rank/rank"
   ],
   "window": {

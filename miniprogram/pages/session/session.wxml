@@ -1,0 +1,9 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="hint">加载中…</view>
+  <block wx:else>
+    <text class="title">夜局详情（占位）</text>
+    <text class="sub" wx:if="{{roomCode}}">房间码 {{roomCode}}</text>
+    <text class="sub">状态 {{status}} · 已结算 {{cycleCount}} 轮</text>
+    <text class="sub">流水与轮次明细将在后续任务实现</text>
+  </block>
+</view>

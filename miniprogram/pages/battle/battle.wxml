@@ -1,5 +1,123 @@
 <view class="page">
-  <text class="title">战场（占位）</text>
-  <text class="sub" wx:if="{{sessionId}}">sessionId: {{sessionId}}</text>
-  <text class="sub">记分桌面将在后续任务实现</text>
+  <view wx:if="{{loading}}" class="hint">加载中…</view>
+
+  <block wx:else>
+    <!-- 顶栏 -->
+    <view class="topbar">
+      <text class="topbar-main">庄 {{dealerNickname}} · 连×{{streak}} · 倍率×{{mult}}</text>
+      <text class="topbar-sub">第{{cycleIndex}}轮 · 第{{handIndex}}局 · {{roomCode}}</text>
+    </view>
+
+    <!-- 四方桌：seats[0]=下 [1]=右 [2]=上 [3]=左 -->
+    <view wx:if="{{seats.length === 4}}" class="table">
+      <view class="seat seat--top {{seats[2].isDealer ? 'seat--dealer' : ''}} {{seats[2].hasHu ? 'seat--hu' : ''}}"
+        data-id="{{seats[2].playerId}}" data-hashu="{{seats[2].hasHu}}" bindtap="selectSeat">
+        <text class="seat-pos">上</text>
+        <text class="seat-name">{{seats[2].nickname}}</text>
+        <text class="seat-chips">{{seats[2].chips}}</text>
+        <text wx:if="{{seats[2].hasHu}}" class="seat-hu">已胡</text>
+        <text wx:if="{{seats[2].isDealer}}" class="seat-dealer-badge">庄</text>
+      </view>
+
+      <view class="seat-mid">
+        <view class="seat seat--side {{seats[3].isDealer ? 'seat--dealer' : ''}} {{seats[3].hasHu ? 'seat--hu' : ''}}"
+          data-id="{{seats[3].playerId}}" data-hashu="{{seats[3].hasHu}}" bindtap="selectSeat">
+          <text class="seat-pos">左</text>
+          <text class="seat-name">{{seats[3].nickname}}</text>
+          <text class="seat-chips">{{seats[3].chips}}</text>
+          <text wx:if="{{seats[3].hasHu}}" class="seat-hu">已胡</text>
+          <text wx:if="{{seats[3].isDealer}}" class="seat-dealer-badge">庄</text>
+        </view>
+
+        <view class="table-center">
+          <text class="center-label">点座位录胡</text>
+        </view>
+
+        <view class="seat seat--side {{seats[1].isDealer ? 'seat--dealer' : ''}} {{seats[1].hasHu ? 'seat--hu' : ''}}"
+          data-id="{{seats[1].playerId}}" data-hashu="{{seats[1].hasHu}}" bindtap="selectSeat">
+          <text class="seat-pos">右</text>
+          <text class="seat-name">{{seats[1].nickname}}</text>
+          <text class="seat-chips">{{seats[1].chips}}</text>
+          <text wx:if="{{seats[1].hasHu}}" class="seat-hu">已胡</text>
+          <text wx:if="{{seats[1].isDealer}}" class="seat-dealer-badge">庄</text>
+        </view>
+      </view>
+
+      <view class="seat seat--bottom {{seats[0].isDealer ? 'seat--dealer' : ''}} {{seats[0].hasHu ? 'seat--hu' : ''}}"
+        data-id="{{seats[0].playerId}}" data-hashu="{{seats[0].hasHu}}" bindtap="selectSeat">
+        <text class="seat-pos">下</text>
+        <text class="seat-name">{{seats[0].nickname}}</text>
+        <text class="seat-chips">{{seats[0].chips}}</text>
+        <text wx:if="{{seats[0].hasHu}}" class="seat-hu">已胡</text>
+        <text wx:if="{{seats[0].isDealer}}" class="seat-dealer-badge">庄</text>
+      </view>
+    </view>
+    <view wx:else class="hint">暂无座位数据</view>
+
+    <!-- 底栏 -->
+    <view class="bottombar">
+      <button class="bar-btn" disabled="{{busy || showSettle}}" bindtap="onLiuju">流局</button>
+      <button class="bar-btn" disabled="{{busy || showSettle || !canUndo}}" bindtap="onUndo">撤销上一胡</button>
+      <button class="bar-btn bar-btn--ghost" bindtap="onSessionDetail">夜局详情</button>
+    </view>
+  </block>
+
+  <!-- 简易录胡面板（Task 12 将替换为 hu-sheet） -->
+  <view wx:if="{{showHuSheet}}" class="sheet-mask" catchtouchmove="noop">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-head">
+        <text class="sheet-title">录胡 · {{winnerNickname}}</text>
+        <text class="sheet-close" bindtap="closeHuSheet">取消</text>
+      </view>
+
+      <view class="sheet-row">
+        <view class="chip {{winType === 'zimo' ? 'chip--on' : ''}}" data-type="zimo" bindtap="onWinType">自摸</view>
+        <view class="chip {{winType === 'dianpao' ? 'chip--on' : ''}}" data-type="dianpao" bindtap="onWinType">点炮</view>
+      </view>
+
+      <view wx:if="{{winType === 'dianpao'}}" class="sheet-block">
+        <text class="sheet-label">点炮者</text>
+        <view class="sheet-row">
+          <view
+            wx:for="{{payerOptions}}"
+            wx:key="playerId"
+            class="chip {{dianpaoId === item.playerId ? 'chip--on' : ''}}"
+            data-id="{{item.playerId}}"
+            bindtap="onDianpaoPick"
+          >{{item.nickname}}</view>
+        </view>
+      </view>
+
+      <view class="sheet-block">
+        <text class="sheet-label">基本番</text>
+        <view class="sheet-row">
+          <view
+            wx:for="{{basicFans}}"
+            wx:key="id"
+            class="chip {{basicFan === item.id ? 'chip--on' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onBasicFan"
+          >{{item.label}}</view>
+        </view>
+      </view>
+
+      <button class="confirm-btn" loading="{{busy}}" disabled="{{busy}}" bindtap="onConfirmHu">确认入账</button>
+    </view>
+  </view>
+
+  <!-- 轮结弹层 -->
+  <view wx:if="{{showSettle}}" class="sheet-mask">
+    <view class="sheet settle-sheet">
+      <text class="sheet-title">本轮结算</text>
+      <view class="settle-list">
+        <view wx:for="{{settlements}}" wx:key="playerId" class="settle-row">
+          <text class="settle-name">{{item.nickname}}</text>
+          <text class="settle-delta">牌 {{item.chipDelta >= 0 ? '+' : ''}}{{item.chipDelta}}</text>
+          <text class="settle-yuan {{item.yuan >= 0 ? 'up' : 'down'}}">{{item.yuan >= 0 ? '+' : ''}}{{item.yuan}} 元</text>
+        </view>
+      </view>
+      <button class="confirm-btn" bindtap="onNextCycle">再开一轮</button>
+      <button class="bar-btn bar-btn--ghost end-btn" bindtap="onEndSession">结束夜局</button>
+    </view>
+  </view>
 </view>
