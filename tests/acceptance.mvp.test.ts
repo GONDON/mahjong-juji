@@ -47,29 +47,33 @@ describe('MVP acceptance (design spec §4–§8)', () => {
       chipValueYuan: 1,
       nicknames: ['A', 'B', 'C', 'D'],
     })
-    await startCycle(sessionId, 'p0')
-
     let doc = await getSession(sessionId)
+    const [idA, idB, idC] = doc.seats.map((s) => s.playerId)
+    expect(doc.seats.map((s) => s.nickname)).toEqual(['A', 'B', 'C', 'D'])
+
+    await startCycle(sessionId, idA)
+
+    doc = await getSession(sessionId)
     expect(doc.chipValueYuan).toBe(1)
     expect(doc.currentCycle?.index).toBe(1)
-    expect(doc.currentCycle?.dealer).toEqual({ dealerId: 'p0', streak: 0 })
+    expect(doc.currentCycle?.dealer).toEqual({ dealerId: idA, streak: 0 })
 
     // 2. A(庄) 平胡点炮 B → 庄倍×2，B -2 / A +2（§11 非庄平胡才是 ±1）
-    await appendHu(sessionId, pinghuDianpao('p0', 'p1'))
+    await appendHu(sessionId, pinghuDianpao(idA, idB))
     doc = await getSession(sessionId)
-    expect(doc.seats.find((s) => s.playerId === 'p0')!.chips).toBe(22)
-    expect(doc.seats.find((s) => s.playerId === 'p1')!.chips).toBe(18)
-    expect(doc.currentCycle?.firstHuId).toBe('p0')
+    expect(doc.seats[0].chips).toBe(22)
+    expect(doc.seats[1].chips).toBe(18)
+    expect(doc.currentCycle?.firstHuId).toBe(idA)
 
     // 3. 流局开下一局：首胡=庄 A → 连庄 +1，庄仍为 A
     await liuju(sessionId)
     doc = await getSession(sessionId)
-    expect(doc.currentCycle?.dealer.dealerId).toBe('p0')
+    expect(doc.currentCycle?.dealer.dealerId).toBe(idA)
     expect(doc.currentCycle?.dealer.streak).toBe(1)
     expect(doc.currentCycle?.firstHuId).toBeNull()
 
     // 4. 打到有人 0 → 结算 (chips-20)*1，四家 yuan 合计 ≈ 0
-    let result = await appendHu(sessionId, bigZimo('p0'))
+    let result = await appendHu(sessionId, bigZimo(idA))
     // If one zimo is not enough (unlikely with 清七对×庄倍), keep draining
     let guard = 0
     while (!result.cycleOver && guard < 40) {
@@ -91,10 +95,10 @@ describe('MVP acceptance (design spec §4–§8)', () => {
     expect(doc.currentCycle).toBeUndefined()
 
     // 5. 再开一轮 → 手动选庄 C（无骰子），连庄清零
-    await startCycle(sessionId, 'p2')
+    await startCycle(sessionId, idC)
     doc = await getSession(sessionId)
     expect(doc.currentCycle?.index).toBe(2)
-    expect(doc.currentCycle?.dealer).toEqual({ dealerId: 'p2', streak: 0 })
+    expect(doc.currentCycle?.dealer).toEqual({ dealerId: idC, streak: 0 })
 
     // Settle cycle 2 so we can end the night (manual settle of untouched table)
     await settleCycleManual(sessionId)

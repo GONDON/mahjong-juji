@@ -9,6 +9,8 @@ Page({
     selectedId: '',
     confirming: false,
     loading: true,
+    /** Mock default: everyone is scorer; cloud enforces via sessionWrite. */
+    isScorer: true,
   },
 
   async onLoad(query: Record<string, string | undefined>) {
@@ -27,6 +29,7 @@ Page({
           playerId: s.playerId,
           nickname: s.nickname,
         })),
+        isScorer: true,
         loading: false,
       })
     } catch (err) {
@@ -37,13 +40,14 @@ Page({
   },
 
   onSelect(e: WechatMiniprogram.TouchEvent) {
+    if (!this.data.isScorer) return
     const playerId = String(e.currentTarget.dataset.id || '')
     if (!playerId) return
     this.setData({ selectedId: playerId })
   },
 
   async onConfirm() {
-    if (this.data.confirming) return
+    if (!this.data.isScorer || this.data.confirming) return
     const { sessionId, selectedId } = this.data
     if (!selectedId) {
       wx.showToast({ title: '请先点选庄家', icon: 'none' })

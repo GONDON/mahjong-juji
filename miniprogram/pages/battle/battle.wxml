@@ -56,8 +56,11 @@
 
     <!-- 底栏 -->
     <view class="bottombar">
-      <button class="bar-btn" disabled="{{busy || showSettle}}" bindtap="onLiuju">流局</button>
-      <button class="bar-btn" disabled="{{busy || showSettle || !canUndo}}" bindtap="onUndo">撤销上一胡</button>
+      <block wx:if="{{isScorer}}">
+        <button class="bar-btn" disabled="{{busy || showSettle}}" bindtap="onLiuju">流局</button>
+        <button class="bar-btn" disabled="{{busy || showSettle}}" bindtap="onSettleCycle">本轮结清</button>
+        <button class="bar-btn" disabled="{{busy || showSettle || !canUndo}}" bindtap="onUndo">撤销上一胡</button>
+      </block>
       <button class="bar-btn bar-btn--ghost" bindtap="onSessionDetail">夜局详情</button>
     </view>
   </block>

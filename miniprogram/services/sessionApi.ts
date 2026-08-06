@@ -98,7 +98,10 @@ export interface SessionDoc {
   sessionId: string
   roomCode: string
   chipValueYuan: number
+  /** Mock always uses MOCK_SCORER_ID; cloud uses OPENID. */
   scorerId: string
+  /** Present on cloud sessions; mock may omit. */
+  scorerOpenId?: string
   seats: SessionSeat[]
   status: SessionStatus
   currentCycle?: CurrentCycle
@@ -106,6 +109,44 @@ export interface SessionDoc {
   hands: HandRecord[]
   huEvents: HuEventRecord[]
   createdAt: number
+}
+
+/** Constant scorer id for mock createSession (tests do not set openid). */
+export const MOCK_SCORER_ID = 'mock-scorer'
+
+/**
+ * Optional mock openid for scorer asserts on write paths.
+ * Leave unset (null) so tests pass without configuring identity.
+ */
+let mockOpenId: string | null = null
+
+export function __setMockOpenId(openid: string | null): void {
+  mockOpenId = openid
+}
+
+function assertMockScorer(doc: SessionDoc): void {
+  if (mockOpenId != null && doc.scorerId !== mockOpenId) {
+    throw new Error('only the scorer can write this session')
+  }
+}
+
+/** trim + lower + collapse spaces — year board keys by playerId = nid_${norm}. */
+export function normalizeNickname(nickname: string): string {
+  return String(nickname || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+}
+
+/** Stable year identity; duplicate nicknames in one session get `_seat${i}`. */
+export function playerIdsFromNicknames(nicknames: string[]): string[] {
+  const seen = new Set<string>()
+  return nicknames.map((nickname, i) => {
+    const base = `nid_${normalizeNickname(nickname)}`
+    if (seen.has(base)) return `${base}_seat${i}`
+    seen.add(base)
+    return base
+  })
 }
 
 export interface CommitResult {
@@ -200,7 +241,7 @@ function settleCurrent(entry: MockEntry): CycleSettlementRow[] {
   return settlements
 }
 
-/** Test helper: clear in-memory mock store. */
+/** Test helper: clear in-memory mock store (does not clear mockOpenId). */
 export function __resetMockSessions(): void {
   mockStore.clear()
   roomIndex.clear()
@@ -217,18 +258,21 @@ export async function createSession(input: {
 
   const sessionId = nextId('sess')
   const roomCode = genRoomCode()
+  const playerIds = playerIdsFromNicknames(input.nicknames)
   const seats: SessionSeat[] = input.nicknames.map((nickname, i) => ({
-    playerId: `p${i}`,
+    playerId: playerIds[i],
     nickname,
     chips: 0,
     hasHu: false,
   }))
 
+  // scorerId is always MOCK_SCORER_ID in mock mode (documented constant).
   const doc: SessionDoc = {
     sessionId,
     roomCode,
     chipValueYuan: input.chipValueYuan,
-    scorerId: 'mock-scorer',
+    scorerId: MOCK_SCORER_ID,
+    scorerOpenId: MOCK_SCORER_ID,
     seats,
     status: 'open',
     cycles: [],
@@ -270,6 +314,7 @@ export async function startCycle(
   }
   const entry = requireMock(sessionId)
   const { doc } = entry
+  assertMockScorer(doc)
   if (doc.status === 'ended') throw new Error('session ended')
   if (doc.currentCycle) throw new Error('cycle already in progress')
 
@@ -309,6 +354,7 @@ export async function appendHu(
   }
   const entry = requireMock(sessionId)
   const { doc } = entry
+  assertMockScorer(doc)
   if (doc.status !== 'playing' || !doc.currentCycle) {
     throw new Error('no playing cycle')
   }
@@ -349,6 +395,7 @@ export async function liuju(sessionId: string): Promise<void> {
   }
   const entry = requireMock(sessionId)
   const { doc } = entry
+  assertMockScorer(doc)
   if (doc.status !== 'playing' || !doc.currentCycle) {
     throw new Error('no playing cycle')
   }
@@ -382,6 +429,7 @@ export async function undoLastHu(sessionId: string): Promise<SessionDoc> {
   }
   const entry = requireMock(sessionId)
   const { doc } = entry
+  assertMockScorer(doc)
   if (entry.undoStack.length === 0 || doc.huEvents.length === 0) {
     throw new Error('nothing to undo')
   }
@@ -406,6 +454,7 @@ export async function settleCycleManual(
     return callSessionWrite('settleCycleManual', { sessionId })
   }
   const entry = requireMock(sessionId)
+  assertMockScorer(entry.doc)
   if (entry.doc.status !== 'playing' || !entry.doc.currentCycle) {
     throw new Error('no playing cycle')
   }
@@ -418,6 +467,7 @@ export async function endSession(sessionId: string): Promise<void> {
     return
   }
   const entry = requireMock(sessionId)
+  assertMockScorer(entry.doc)
   if (entry.doc.currentCycle) {
     throw new Error('settle current cycle before ending session')
   }

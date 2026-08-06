@@ -6,6 +6,7 @@ import {
   endSession,
   getSession,
   liuju,
+  settleCycleManual,
   undoLastHu,
   type SessionDoc,
   type SessionSeat,
@@ -48,6 +49,8 @@ Page({
     handIndex: 0,
     seats: [] as ReturnType<typeof buildViewSeats>,
     canUndo: false,
+    /** Mock default: everyone is scorer. Cloud relies on server gate. */
+    isScorer: true,
     showHuSheet: false,
     winnerId: '',
     showSettle: false,
@@ -95,6 +98,7 @@ Page({
 
     const nickMap = Object.fromEntries(doc.seats.map((s) => [s.playerId, s.nickname]))
 
+    // Mock default: everyone is scorer. Cloud write gate is server-side (Critical 1).
     this.setData({
       loading: false,
       roomCode: doc.roomCode,
@@ -106,6 +110,7 @@ Page({
       handIndex: hand?.index ?? 0,
       seats: buildViewSeats(doc.seats, dealerId),
       canUndo: canUndoFrom(doc),
+      isScorer: true,
       showSettle: Boolean(settleRows && settleRows.length),
       settlements: (settleRows || []).map((r) => ({
         ...r,
@@ -115,7 +120,7 @@ Page({
   },
 
   selectSeat(e: WechatMiniprogram.TouchEvent) {
-    if (this.data.busy || this.data.showSettle) return
+    if (!this.data.isScorer || this.data.busy || this.data.showSettle) return
     const playerId = String(e.currentTarget.dataset.id || '')
     const hasHu = e.currentTarget.dataset.hashu === true || e.currentTarget.dataset.hashu === 'true'
     if (!playerId || hasHu) return
@@ -162,8 +167,34 @@ Page({
     }
   },
 
+  async onSettleCycle() {
+    if (!this.data.isScorer || this.data.busy || this.data.showSettle) return
+    const { sessionId } = this.data
+    const ok = await new Promise<boolean>((resolve) => {
+      wx.showModal({
+        title: '本轮结清？',
+        content: '提前结束本轮并按当前筹码结算，确认后不可撤销本轮牌局。',
+        success: (r) => resolve(Boolean(r.confirm)),
+        fail: () => resolve(false),
+      })
+    })
+    if (!ok) return
+
+    this.setData({ busy: true })
+    try {
+      const settlements = await settleCycleManual(sessionId)
+      const doc = await getSession(sessionId)
+      this.applyDoc(doc, settlements)
+    } catch (err) {
+      console.error(err)
+      wx.showToast({ title: '结清失败', icon: 'none' })
+    } finally {
+      this.setData({ busy: false })
+    }
+  },
+
   async onLiuju() {
-    if (this.data.busy || this.data.showSettle) return
+    if (!this.data.isScorer || this.data.busy || this.data.showSettle) return
     const { sessionId } = this.data
     const ok = await new Promise<boolean>((resolve) => {
       wx.showModal({
@@ -188,7 +219,7 @@ Page({
   },
 
   async onUndo() {
-    if (this.data.busy || this.data.showSettle || !this.data.canUndo) return
+    if (!this.data.isScorer || this.data.busy || this.data.showSettle || !this.data.canUndo) return
     this.setData({ busy: true })
     try {
       await undoLastHu(this.data.sessionId)

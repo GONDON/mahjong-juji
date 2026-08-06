@@ -78,9 +78,29 @@ function applyTable(doc, table) {
 
 function assertScorer(doc, openid) {
   if (!openid) throw new Error('missing openid')
-  if (doc.scorerOpenId && doc.scorerOpenId !== openid) {
+  // Empty scorerOpenId is an invalid session — do not skip the gate.
+  if (doc.scorerOpenId !== openid) {
     throw new Error('only the scorer can write this session')
   }
+}
+
+/** trim + lower + collapse spaces; year board keys by playerId = nid_${norm}. */
+function normalizeNickname(nickname) {
+  return String(nickname || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+}
+
+/** Stable year identity from nickname; duplicate nicknames in one session get `_seat${i}`. */
+function playerIdsFromNicknames(nicknames) {
+  const seen = new Set()
+  return nicknames.map((nickname, i) => {
+    const base = `nid_${normalizeNickname(nickname)}`
+    if (seen.has(base)) return `${base}_seat${i}`
+    seen.add(base)
+    return base
+  })
 }
 
 async function loadById(sessionId) {
@@ -121,14 +141,16 @@ function genRoomCode() {
 }
 
 async function createSession(event, openid) {
+  if (!openid) throw new Error('missing openid')
   const { chipValueYuan, nicknames } = event
   if (!Array.isArray(nicknames) || nicknames.length !== 4) {
     throw new Error('nicknames must be 4 strings')
   }
   const col = sessionsCol()
   const roomCode = genRoomCode()
+  const playerIds = playerIdsFromNicknames(nicknames)
   const seats = nicknames.map((nickname, i) => ({
-    playerId: `p${i}`,
+    playerId: playerIds[i],
     nickname,
     chips: 0,
     hasHu: false,
@@ -138,8 +160,8 @@ async function createSession(event, openid) {
     data: {
       roomCode,
       chipValueYuan,
-      scorerOpenId: openid || '',
-      scorerId: openid || 'unknown',
+      scorerOpenId: openid,
+      scorerId: openid,
       seats,
       status: 'open',
       cycles: [],

@@ -4,6 +4,7 @@ import {
   appendHu,
   createSession,
   getSession,
+  MOCK_SCORER_ID,
   startCycle,
 } from '../miniprogram/services/sessionApi'
 
@@ -18,12 +19,18 @@ describe('sessionApi mock', () => {
       nicknames: ['A', 'B', 'C', 'D'],
     })
 
-    await startCycle(sessionId, 'p0')
+    const opened = await getSession(sessionId)
+    expect(opened.scorerId).toBe(MOCK_SCORER_ID)
+    const [idA, idB, idC] = opened.seats.map((s) => s.playerId)
+    expect(idA).toMatch(/^nid_/)
+    expect(idB).toMatch(/^nid_/)
+
+    await startCycle(sessionId, idA)
 
     await appendHu(sessionId, {
-      winnerId: 'p1',
+      winnerId: idB,
       winType: 'dianpao',
-      dianpaoId: 'p2',
+      dianpaoId: idC,
       basicFan: 'pinghu',
       extras: [],
       genCount: 0,
@@ -32,9 +39,9 @@ describe('sessionApi mock', () => {
     })
 
     const doc = await getSession(sessionId)
-    expect(doc.seats.find((s) => s.playerId === 'p1')!.chips).toBe(21)
-    expect(doc.seats.find((s) => s.playerId === 'p2')!.chips).toBe(19)
-    expect(doc.seats.find((s) => s.playerId === 'p1')!.hasHu).toBe(true)
+    expect(doc.seats[1].chips).toBe(21)
+    expect(doc.seats[2].chips).toBe(19)
+    expect(doc.seats[1].hasHu).toBe(true)
     expect(doc.huEvents).toHaveLength(1)
     expect(doc.status).toBe('playing')
   })

@@ -22,10 +22,12 @@
     </view>
 
     <button
+      wx:if="{{isScorer}}"
       class="confirm-btn"
       loading="{{confirming}}"
       disabled="{{confirming || !selectedId}}"
       bindtap="onConfirm"
     >确认庄家，开始本轮</button>
+    <view wx:else class="hint">仅计分员可选庄开局</view>
   </block>
 </view>
