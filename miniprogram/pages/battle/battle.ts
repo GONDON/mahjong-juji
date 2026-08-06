@@ -167,8 +167,8 @@ Page({
     const { sessionId } = this.data
     const ok = await new Promise<boolean>((resolve) => {
       wx.showModal({
-        title: '确认流局？',
-        content: '无人胡牌，庄与连庄不变，开下一局',
+        title: '结束本局？',
+        content: '若本局无人胡，庄与连庄不变；若已有人胡，下一局按首胡者坐庄（庄家首胡则连庄+1）。',
         success: (r) => resolve(Boolean(r.confirm)),
         fail: () => resolve(false),
       })
