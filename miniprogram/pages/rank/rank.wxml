@@ -1,4 +1,76 @@
 <view class="page">
-  <text class="title">年度榜（占位）</text>
-  <text class="sub">麻将之神 / 最拉王将在后续任务实现</text>
+  <view wx:if="{{loading}}" class="hint">加载中…</view>
+
+  <block wx:else>
+    <view class="header">
+      <text class="title">{{year}} 年度榜</text>
+      <text class="sub">按已结束夜局的人民币结算额统计</text>
+    </view>
+
+    <view wx:if="{{empty}}" class="empty">暂无年度数据</view>
+
+    <block wx:else>
+      <view class="section">
+        <text class="section-title">麻将之神 · 累计</text>
+        <view
+          wx:for="{{godByTotal}}"
+          wx:key="playerId"
+          class="row"
+        >
+          <text class="rank">{{item.rank}}</text>
+          <text class="name">{{item.nickname}}</text>
+          <text class="meta">{{item.sessions}} 场</text>
+          <text class="value up">{{item.totalLabel}}</text>
+        </view>
+        <view wx:if="{{godByTotal.length === 0}}" class="empty-sm">暂无</view>
+      </view>
+
+      <view class="section">
+        <text class="section-title">麻将之神 · 场均</text>
+        <text class="note">场均需满 3 场</text>
+        <view
+          wx:for="{{godByAvg}}"
+          wx:key="playerId"
+          class="row"
+        >
+          <text class="rank">{{item.rank}}</text>
+          <text class="name">{{item.nickname}}</text>
+          <text class="meta">{{item.sessions}} 场</text>
+          <text class="value up">{{item.avgLabel}}</text>
+        </view>
+        <view wx:if="{{godByAvg.length === 0}}" class="empty-sm">暂无满 3 场选手</view>
+      </view>
+
+      <view class="section">
+        <text class="section-title">麻将最拉王 · 累计</text>
+        <view
+          wx:for="{{worstByTotal}}"
+          wx:key="playerId"
+          class="row"
+        >
+          <text class="rank">{{item.rank}}</text>
+          <text class="name">{{item.nickname}}</text>
+          <text class="meta">{{item.sessions}} 场</text>
+          <text class="value down">{{item.totalLabel}}</text>
+        </view>
+        <view wx:if="{{worstByTotal.length === 0}}" class="empty-sm">暂无</view>
+      </view>
+
+      <view class="section">
+        <text class="section-title">麻将最拉王 · 场均</text>
+        <text class="note">场均需满 3 场</text>
+        <view
+          wx:for="{{worstByAvg}}"
+          wx:key="playerId"
+          class="row"
+        >
+          <text class="rank">{{item.rank}}</text>
+          <text class="name">{{item.nickname}}</text>
+          <text class="meta">{{item.sessions}} 场</text>
+          <text class="value down">{{item.avgLabel}}</text>
+        </view>
+        <view wx:if="{{worstByAvg.length === 0}}" class="empty-sm">暂无满 3 场选手</view>
+      </view>
+    </block>
+  </block>
 </view>
