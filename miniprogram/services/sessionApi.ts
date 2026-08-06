@@ -1,16 +1,19 @@
 /**
  * sessionApi — persistence facade for night sessions.
  *
- * Cloud collections (Task 9b wires real wx.cloud):
+ * Cloud (USE_MOCK=false): all actions go through
+ *   wx.cloud.callFunction({ name: 'sessionWrite', data: { action, ... } })
+ * so scorer checks stay server-side. See docs/cloud-setup.md.
+ *
+ * Collections (denormalized `sessions` docs in MVP cloud stub):
  * - sessions: _id, roomCode, chipValueYuan, scorerOpenId/scorerId,
  *   seats[{playerId,nickname,openId?}], status, circleId?, createdAt
- * - cycles: sessionId, index, dealerPickId, settlements[], status
- * - hands: cycleId, index, dealerId, streak, firstHuId, liuju
- * - huEvents: handId, payload (HuInput + score snapshot + transfers)
+ * - cycles / hands / huEvents nested on the session doc (mock + cloud stub)
  *
- * USE_MOCK=true keeps an in-memory Map so UI can run without WeChat cloud.
+ * USE_MOCK=true (default) keeps an in-memory Map for tests / offline UI.
  */
 
+import { USE_MOCK as CONFIG_USE_MOCK } from '../config'
 import { freshDealer } from '../domain/dealer'
 import { commitHu, commitLiuju, openNextHand } from '../domain/handFlow'
 import type { SessionPlayerYuan } from '../domain/leaderboard'
@@ -25,7 +28,33 @@ import type {
   Transfer,
 } from '../domain/types'
 
-export const USE_MOCK = true
+/** Re-export from config so callers can feature-detect mock mode. */
+export const USE_MOCK = CONFIG_USE_MOCK
+
+type CloudResult<T> = { ok: true; data: T } | { ok: false; error: string }
+
+async function callSessionWrite<T>(
+  action: string,
+  data: Record<string, unknown> = {},
+): Promise<T> {
+  if (typeof wx === 'undefined' || !wx.cloud) {
+    throw new Error(
+      'wx.cloud unavailable; keep USE_MOCK=true or run in WeChat DevTools',
+    )
+  }
+  const res = await wx.cloud.callFunction({
+    name: 'sessionWrite',
+    data: { action, ...data },
+  })
+  const result = res.result as CloudResult<T>
+  if (!result || result.ok === false) {
+    throw new Error(
+      (result && 'error' in result && result.error) ||
+        'cloud sessionWrite failed',
+    )
+  }
+  return result.data
+}
 
 export type SessionStatus = 'open' | 'playing' | 'settling' | 'ended'
 
@@ -171,10 +200,6 @@ function settleCurrent(entry: MockEntry): CycleSettlementRow[] {
   return settlements
 }
 
-function notImplemented(): never {
-  throw new Error('cloud sessionApi not implemented; set USE_MOCK=true')
-}
-
 /** Test helper: clear in-memory mock store. */
 export function __resetMockSessions(): void {
   mockStore.clear()
@@ -186,7 +211,9 @@ export async function createSession(input: {
   chipValueYuan: number
   nicknames: [string, string, string, string]
 }): Promise<{ sessionId: string; roomCode: string }> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    return callSessionWrite('createSession', { ...input })
+  }
 
   const sessionId = nextId('sess')
   const roomCode = genRoomCode()
@@ -216,14 +243,18 @@ export async function createSession(input: {
 }
 
 export async function getSession(sessionId: string): Promise<SessionDoc> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    return callSessionWrite('getSession', { sessionId })
+  }
   return cloneDoc(requireMock(sessionId).doc)
 }
 
 export async function getSessionByRoomCode(
   roomCode: string,
 ): Promise<SessionDoc | null> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    return callSessionWrite('getSessionByRoomCode', { roomCode })
+  }
   const sessionId = roomIndex.get(roomCode.toUpperCase())
   if (!sessionId) return null
   return cloneDoc(requireMock(sessionId).doc)
@@ -233,7 +264,10 @@ export async function startCycle(
   sessionId: string,
   dealerId: string,
 ): Promise<void> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    await callSessionWrite('startCycle', { sessionId, dealerId })
+    return
+  }
   const entry = requireMock(sessionId)
   const { doc } = entry
   if (doc.status === 'ended') throw new Error('session ended')
@@ -270,7 +304,9 @@ export async function appendHu(
   sessionId: string,
   input: HuInput,
 ): Promise<CommitResult> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    return callSessionWrite('appendHu', { sessionId, input })
+  }
   const entry = requireMock(sessionId)
   const { doc } = entry
   if (doc.status !== 'playing' || !doc.currentCycle) {
@@ -307,7 +343,10 @@ export async function appendHu(
 }
 
 export async function liuju(sessionId: string): Promise<void> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    await callSessionWrite('liuju', { sessionId })
+    return
+  }
   const entry = requireMock(sessionId)
   const { doc } = entry
   if (doc.status !== 'playing' || !doc.currentCycle) {
@@ -341,7 +380,9 @@ export async function liuju(sessionId: string): Promise<void> {
 }
 
 export async function undoLastHu(sessionId: string): Promise<SessionDoc> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    return callSessionWrite('undoLastHu', { sessionId })
+  }
   const entry = requireMock(sessionId)
   const { doc } = entry
   if (entry.undoStack.length === 0 || doc.huEvents.length === 0) {
@@ -364,7 +405,9 @@ export async function undoLastHu(sessionId: string): Promise<SessionDoc> {
 export async function settleCycleManual(
   sessionId: string,
 ): Promise<CycleSettlementRow[]> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    return callSessionWrite('settleCycleManual', { sessionId })
+  }
   const entry = requireMock(sessionId)
   if (entry.doc.status !== 'playing' || !entry.doc.currentCycle) {
     throw new Error('no playing cycle')
@@ -373,7 +416,10 @@ export async function settleCycleManual(
 }
 
 export async function endSession(sessionId: string): Promise<void> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    await callSessionWrite('endSession', { sessionId })
+    return
+  }
   const entry = requireMock(sessionId)
   if (entry.doc.currentCycle) {
     throw new Error('settle current cycle before ending session')
@@ -384,7 +430,9 @@ export async function endSession(sessionId: string): Promise<void> {
 export async function listYearSettlements(
   year: number,
 ): Promise<SessionPlayerYuan[]> {
-  if (!USE_MOCK) notImplemented()
+  if (!USE_MOCK) {
+    return callSessionWrite('listYearSettlements', { year })
+  }
   const rows: SessionPlayerYuan[] = []
   for (const { doc } of mockStore.values()) {
     if (doc.status !== 'ended') continue

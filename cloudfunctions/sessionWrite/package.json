@@ -1,0 +1,9 @@
+{
+  "name": "sessionWrite",
+  "version": "1.0.0",
+  "description": "Scorer-gated session mutations for TCMSP",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
