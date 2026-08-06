@@ -62,48 +62,15 @@
     </view>
   </block>
 
-  <!-- 简易录胡面板（Task 12 将替换为 hu-sheet） -->
-  <view wx:if="{{showHuSheet}}" class="sheet-mask" catchtouchmove="noop">
-    <view class="sheet" catchtap="noop">
-      <view class="sheet-head">
-        <text class="sheet-title">录胡 · {{winnerNickname}}</text>
-        <text class="sheet-close" bindtap="closeHuSheet">取消</text>
-      </view>
-
-      <view class="sheet-row">
-        <view class="chip {{winType === 'zimo' ? 'chip--on' : ''}}" data-type="zimo" bindtap="onWinType">自摸</view>
-        <view class="chip {{winType === 'dianpao' ? 'chip--on' : ''}}" data-type="dianpao" bindtap="onWinType">点炮</view>
-      </view>
-
-      <view wx:if="{{winType === 'dianpao'}}" class="sheet-block">
-        <text class="sheet-label">点炮者</text>
-        <view class="sheet-row">
-          <view
-            wx:for="{{payerOptions}}"
-            wx:key="playerId"
-            class="chip {{dianpaoId === item.playerId ? 'chip--on' : ''}}"
-            data-id="{{item.playerId}}"
-            bindtap="onDianpaoPick"
-          >{{item.nickname}}</view>
-        </view>
-      </view>
-
-      <view class="sheet-block">
-        <text class="sheet-label">基本番</text>
-        <view class="sheet-row">
-          <view
-            wx:for="{{basicFans}}"
-            wx:key="id"
-            class="chip {{basicFan === item.id ? 'chip--on' : ''}}"
-            data-id="{{item.id}}"
-            bindtap="onBasicFan"
-          >{{item.label}}</view>
-        </view>
-      </view>
-
-      <button class="confirm-btn" loading="{{busy}}" disabled="{{busy}}" bindtap="onConfirmHu">确认入账</button>
-    </view>
-  </view>
+  <hu-sheet
+    visible="{{showHuSheet}}"
+    winnerId="{{winnerId}}"
+    seats="{{seats}}"
+    dealerId="{{dealerId}}"
+    streak="{{streak}}"
+    bind:cancel="closeHuSheet"
+    bind:confirm="onHuConfirm"
+  />
 
   <!-- 轮结弹层 -->
   <view wx:if="{{showSettle}}" class="sheet-mask">

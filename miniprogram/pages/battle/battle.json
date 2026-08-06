@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "战场"
+  "navigationBarTitleText": "战场",
+  "usingComponents": {
+    "hu-sheet": "/components/hu-sheet/hu-sheet"
+  }
 }

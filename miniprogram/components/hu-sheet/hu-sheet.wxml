@@ -1,0 +1,100 @@
+<view wx:if="{{visible}}" class="mask" catchtouchmove="noop">
+  <view class="sheet" catchtap="noop">
+    <view class="head">
+      <text class="title">录胡 · {{winnerNickname}}</text>
+      <text class="close" bindtap="onCancel">取消</text>
+    </view>
+
+    <scroll-view scroll-y class="body">
+      <!-- 自摸 / 点炮 -->
+      <view class="row">
+        <view class="chip {{winType === 'zimo' ? 'chip--on' : ''}}" data-type="zimo" bindtap="onWinType">自摸</view>
+        <view class="chip {{winType === 'dianpao' ? 'chip--on' : ''}}" data-type="dianpao" bindtap="onWinType">点炮</view>
+      </view>
+
+      <view wx:if="{{winType === 'dianpao'}}" class="block">
+        <text class="label">点炮者</text>
+        <view class="row">
+          <view
+            wx:for="{{payerOptions}}"
+            wx:key="playerId"
+            class="chip {{dianpaoId === item.playerId ? 'chip--on' : ''}}"
+            data-id="{{item.playerId}}"
+            bindtap="onDianpaoPick"
+          >{{item.nickname}}</view>
+        </view>
+      </view>
+
+      <!-- 基本番互斥 -->
+      <view class="block">
+        <text class="label">基本番</text>
+        <view class="row row--fans">
+          <view
+            wx:for="{{basicFans}}"
+            wx:key="id"
+            class="chip chip--fan {{basicFan === item.id ? 'chip--on' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onBasicFan"
+          >{{item.label}}</view>
+        </view>
+      </view>
+
+      <!-- 附加番 -->
+      <view class="block">
+        <text class="label">附加番</text>
+        <view class="row">
+          <view
+            wx:for="{{extraToggles}}"
+            wx:key="id"
+            class="chip {{item.on ? 'chip--on' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onExtraToggle"
+          >{{item.label}}</view>
+        </view>
+      </view>
+
+      <!-- 根 / 明杠 / 暗杠 -->
+      <view class="block steppers">
+        <view class="stepper">
+          <text class="stepper-label">根</text>
+          <view class="stepper-ctrl">
+            <view class="step-btn" data-field="genCount" data-delta="-1" bindtap="onStep">−</view>
+            <text class="step-val">{{genCount}}</text>
+            <view class="step-btn" data-field="genCount" data-delta="1" bindtap="onStep">+</view>
+          </view>
+        </view>
+        <view class="stepper">
+          <text class="stepper-label">明杠</text>
+          <view class="stepper-ctrl">
+            <view class="step-btn" data-field="mingGang" data-delta="-1" bindtap="onStep">−</view>
+            <text class="step-val">{{mingGang}}</text>
+            <view class="step-btn" data-field="mingGang" data-delta="1" bindtap="onStep">+</view>
+          </view>
+        </view>
+        <view class="stepper">
+          <text class="stepper-label">暗杠</text>
+          <view class="stepper-ctrl">
+            <view class="step-btn" data-field="anGang" data-delta="-1" bindtap="onStep">−</view>
+            <text class="step-val">{{anGang}}</text>
+            <view class="step-btn" data-field="anGang" data-delta="1" bindtap="onStep">+</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 实时预览 -->
+      <view class="preview">
+        <text class="label">应付预览</text>
+        <view wx:if="{{previewHint}}" class="preview-hint">{{previewHint}}</view>
+        <block wx:else>
+          <text class="preview-summary">每人 {{previewPerPayer}} 牌（番 {{previewFanPart}} + 杠 {{previewGangPart}} · 庄倍×{{previewDealerMult}}）</text>
+          <view wx:for="{{previewLines}}" wx:key="index" class="preview-line">
+            <text>{{item.from}} → {{item.to}}：{{item.chips}}</text>
+          </view>
+          <view wx:if="{{previewLines.length === 0}}" class="preview-hint">无付款人</view>
+        </block>
+      </view>
+    </scroll-view>
+
+    <button class="confirm" disabled="{{!canConfirm}}" bindtap="onConfirm">确认入账</button>
+  </view>
+</view>

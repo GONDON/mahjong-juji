@@ -1,5 +1,6 @@
 // @ts-nocheck
 import type { CycleSettlementRow } from '../../domain/settleCycle'
+import type { HuInput } from '../../domain/types'
 import {
   appendHu,
   endSession,
@@ -9,12 +10,6 @@ import {
   type SessionDoc,
   type SessionSeat,
 } from '../../services/sessionApi'
-
-const BASIC_FANS = [
-  { id: 'pinghu', label: '平胡' },
-  { id: 'duidui', label: '对对胡' },
-  { id: 'qingyise', label: '清一色' },
-]
 
 const POS_LABELS = ['下', '右', '上', '左']
 
@@ -45,6 +40,7 @@ Page({
     loading: true,
     busy: false,
     roomCode: '',
+    dealerId: '',
     dealerNickname: '',
     streak: 0,
     mult: 2,
@@ -52,16 +48,8 @@ Page({
     handIndex: 0,
     seats: [] as ReturnType<typeof buildViewSeats>,
     canUndo: false,
-    // inline hu panel
     showHuSheet: false,
     winnerId: '',
-    winnerNickname: '',
-    winType: 'zimo' as 'zimo' | 'dianpao',
-    dianpaoId: '',
-    basicFan: 'pinghu',
-    basicFans: BASIC_FANS,
-    payerOptions: [] as { playerId: string; nickname: string }[],
-    // cycle settle
     showSettle: false,
     settlements: [] as (CycleSettlementRow & { nickname: string })[],
   },
@@ -110,6 +98,7 @@ Page({
     this.setData({
       loading: false,
       roomCode: doc.roomCode,
+      dealerId,
       dealerNickname: dealerSeat?.nickname || (dealerId ? '—' : '未开局'),
       streak,
       mult: dealer ? dealerMult(streak) : 0,
@@ -125,7 +114,6 @@ Page({
     })
   },
 
-  /** Hook for Task 12 hu-sheet; opens minimal inline panel for now. */
   selectSeat(e: WechatMiniprogram.TouchEvent) {
     if (this.data.busy || this.data.showSettle) return
     const playerId = String(e.currentTarget.dataset.id || '')
@@ -135,18 +123,9 @@ Page({
     const seat = this.data.seats.find((s) => s.playerId === playerId)
     if (!seat || seat.hasHu) return
 
-    const payerOptions = this.data.seats
-      .filter((s) => s.playerId !== playerId && !s.hasHu)
-      .map((s) => ({ playerId: s.playerId, nickname: s.nickname }))
-
     this.setData({
       showHuSheet: true,
       winnerId: playerId,
-      winnerNickname: seat.nickname,
-      winType: 'zimo',
-      dianpaoId: '',
-      basicFan: 'pinghu',
-      payerOptions,
     })
   },
 
@@ -154,53 +133,24 @@ Page({
     this.setData({
       showHuSheet: false,
       winnerId: '',
-      winnerNickname: '',
-      dianpaoId: '',
     })
   },
 
-  onWinType(e: WechatMiniprogram.TouchEvent) {
-    const winType = String(e.currentTarget.dataset.type) as 'zimo' | 'dianpao'
-    this.setData({
-      winType,
-      dianpaoId: winType === 'zimo' ? '' : this.data.dianpaoId,
-    })
-  },
-
-  onBasicFan(e: WechatMiniprogram.TouchEvent) {
-    const basicFan = String(e.currentTarget.dataset.id || 'pinghu')
-    this.setData({ basicFan })
-  },
-
-  onDianpaoPick(e: WechatMiniprogram.TouchEvent) {
-    const dianpaoId = String(e.currentTarget.dataset.id || '')
-    this.setData({ dianpaoId })
-  },
-
-  async onConfirmHu() {
+  async onHuConfirm(e: WechatMiniprogram.CustomEvent<HuInput>) {
     if (this.data.busy) return
-    const { sessionId, winnerId, winType, dianpaoId, basicFan } = this.data
-    if (!winnerId) return
-    if (winType === 'dianpao' && !dianpaoId) {
+    const input = e.detail
+    if (!input?.winnerId) return
+    if (input.winType === 'dianpao' && !input.dianpaoId) {
       wx.showToast({ title: '请选择点炮者', icon: 'none' })
       return
     }
 
     this.setData({ busy: true })
     try {
-      const result = await appendHu(sessionId, {
-        winnerId,
-        winType,
-        dianpaoId: winType === 'dianpao' ? dianpaoId : undefined,
-        basicFan,
-        extras: [],
-        genCount: 0,
-        mingGang: 0,
-        anGang: 0,
-      })
+      const result = await appendHu(this.data.sessionId, input)
       this.setData({ showHuSheet: false, winnerId: '', busy: false })
       if (result.cycleOver) {
-        const doc = await getSession(sessionId)
+        const doc = await getSession(this.data.sessionId)
         this.applyDoc(doc, result.settlements)
       } else {
         await this.reload()
@@ -280,6 +230,4 @@ Page({
       wx.showToast({ title: '结束失败', icon: 'none' })
     }
   },
-
-  noop() {},
 })

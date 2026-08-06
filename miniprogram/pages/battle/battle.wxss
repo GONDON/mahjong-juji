@@ -194,57 +194,10 @@
   margin-bottom: 80rpx;
 }
 
-.sheet-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28rpx;
-}
-
 .sheet-title {
   font-size: 34rpx;
   font-weight: 700;
   color: #ffffff;
-}
-
-.sheet-close {
-  font-size: 28rpx;
-  color: #888888;
-  padding: 8rpx 12rpx;
-}
-
-.sheet-block {
-  margin-bottom: 24rpx;
-}
-
-.sheet-label {
-  display: block;
-  font-size: 24rpx;
-  color: #888888;
-  margin-bottom: 12rpx;
-}
-
-.sheet-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-bottom: 24rpx;
-}
-
-.chip {
-  padding: 16rpx 28rpx;
-  border-radius: 12rpx;
-  background: #333333;
-  color: #cccccc;
-  font-size: 28rpx;
-  border: 2rpx solid #444444;
-}
-
-.chip--on {
-  background: #3d4a2a;
-  border-color: #8aba4a;
-  color: #ffffff;
-  font-weight: 600;
 }
 
 .confirm-btn {
@@ -257,10 +210,6 @@
   border-radius: 16rpx;
   border: none;
   margin-top: 8rpx;
-}
-
-.confirm-btn[disabled] {
-  opacity: 0.45;
 }
 
 .settle-list {
