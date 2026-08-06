@@ -1,0 +1,41 @@
+<view class="page">
+  <view class="section">
+    <view class="label">牌面值（元/牌）</view>
+    <view class="chip-row">
+      <view
+        wx:for="{{chipOptions}}"
+        wx:key="*this"
+        class="chip-btn {{chipValueYuan === item ? 'chip-btn--on' : ''}}"
+        data-value="{{item}}"
+        bindtap="onChipTap"
+      >{{item}} 元</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="label">四人昵称</view>
+    <view
+      wx:for="{{nicknames}}"
+      wx:key="index"
+      class="nick-row"
+    >
+      <text class="seat-tag">座位 {{index + 1}}</text>
+      <input
+        class="nick-input"
+        placeholder="输入昵称"
+        placeholder-class="nick-ph"
+        maxlength="12"
+        value="{{item}}"
+        data-index="{{index}}"
+        bindinput="onNicknameInput"
+      />
+    </view>
+  </view>
+
+  <button
+    class="submit-btn"
+    loading="{{submitting}}"
+    disabled="{{submitting}}"
+    bindtap="onSubmit"
+  >创建夜局</button>
+</view>

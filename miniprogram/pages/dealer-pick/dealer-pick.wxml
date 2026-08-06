@@ -1,0 +1,31 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="hint">加载中…</view>
+
+  <block wx:else>
+    <view class="header">
+      <text class="title">选择本轮首庄</text>
+      <text wx:if="{{roomCode}}" class="room">房间码 {{roomCode}}</text>
+      <text class="sub">点选一人当庄，确认后发牌进战场（无骰子）</text>
+    </view>
+
+    <view class="seat-grid">
+      <view
+        wx:for="{{seats}}"
+        wx:key="playerId"
+        class="seat-btn {{selectedId === item.playerId ? 'seat-btn--on' : ''}}"
+        data-id="{{item.playerId}}"
+        bindtap="onSelect"
+      >
+        <text class="seat-index">座位 {{index + 1}}</text>
+        <text class="seat-name">{{item.nickname}}</text>
+      </view>
+    </view>
+
+    <button
+      class="confirm-btn"
+      loading="{{confirming}}"
+      disabled="{{confirming || !selectedId}}"
+      bindtap="onConfirm"
+    >确认庄家，开始本轮</button>
+  </block>
+</view>

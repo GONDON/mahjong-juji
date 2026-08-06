@@ -1,0 +1,5 @@
+<view class="page">
+  <text class="title">战场（占位）</text>
+  <text class="sub" wx:if="{{sessionId}}">sessionId: {{sessionId}}</text>
+  <text class="sub">记分桌面将在后续任务实现</text>
+</view>

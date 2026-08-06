@@ -1,3 +1,30 @@
-<view class="container">
-  <text class="title">麻将局记</text>
+<view class="page">
+  <view class="brand">
+    <text class="title">麻将局记</text>
+    <text class="tagline">川麻血战 · 当场记分</text>
+  </view>
+
+  <button class="primary-btn" bindtap="onCreateTap">开新局</button>
+
+  <view class="join-block">
+    <view class="join-label">输入房间码加入（只读）</view>
+    <view class="join-row">
+      <input
+        class="join-input"
+        maxlength="6"
+        placeholder="房间码"
+        placeholder-class="join-ph"
+        value="{{joinCode}}"
+        bindinput="onJoinCodeInput"
+      />
+      <button
+        class="join-btn"
+        loading="{{joining}}"
+        disabled="{{joining}}"
+        bindtap="onJoinTap"
+      >加入</button>
+    </view>
+  </view>
+
+  <button class="ghost-btn" bindtap="onRankTap">年度榜</button>
 </view>
