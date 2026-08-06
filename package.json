@@ -1,5 +1,5 @@
 {
-  "name": "tcmsp",
+  "name": "mahjong-juji",
   "private": true,
   "scripts": {
     "test": "vitest run",
