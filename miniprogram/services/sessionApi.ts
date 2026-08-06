@@ -15,7 +15,7 @@
 
 import { USE_MOCK as CONFIG_USE_MOCK } from '../config'
 import { freshDealer } from '../domain/dealer'
-import { commitHu, commitLiuju, openNextHand } from '../domain/handFlow'
+import { commitHu, openNextHand } from '../domain/handFlow'
 import type { SessionPlayerYuan } from '../domain/leaderboard'
 import { settleCycle, type CycleSettlementRow } from '../domain/settleCycle'
 import type {
@@ -360,12 +360,9 @@ export async function liuju(sessionId: string): Promise<void> {
     hand.firstHuId = table.firstHuId
   }
 
-  // 流局: dealer/streak unchanged, then open next hand (clear hasHu / firstHuId)
-  const next = openNextHand({
-    ...table,
-    dealer: commitLiuju(table.dealer),
-    firstHuId: null,
-  })
+  // End hand → open next: pure 流局 (firstHuId null) keeps dealer/streak;
+  // if someone already hu'd, afterHand uses firstHuId (庄家首胡 → streak+1).
+  const next = openNextHand(table)
 
   applyTable(doc, next)
   entry.undoStack = []

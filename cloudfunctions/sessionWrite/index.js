@@ -13,7 +13,6 @@ const cloud = require('wx-server-sdk')
 const {
   freshDealer,
   commitHu,
-  commitLiuju,
   openNextHand,
   settleCycle,
 } = require('./domain')
@@ -243,11 +242,8 @@ async function liuju(event, openid) {
     hand.liuju = true
     hand.firstHuId = table.firstHuId
   }
-  const next = openNextHand({
-    ...table,
-    dealer: commitLiuju(table.dealer),
-    firstHuId: null,
-  })
+  // Preserve firstHuId for dealer progression (pure 流局 → unchanged).
+  const next = openNextHand(table)
   applyTable(doc, next)
   doc.undoStack = []
   doc.hands.push({
