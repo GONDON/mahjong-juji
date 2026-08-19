@@ -45,4 +45,31 @@ describe('sessionApi mock', () => {
     expect(doc.huEvents).toHaveLength(1)
     expect(doc.status).toBe('playing')
   })
+
+  it('getSession deep-clones without structuredClone (WeChat runtime)', async () => {
+    const { sessionId } = await createSession({
+      chipValueYuan: 1,
+      nicknames: ['A', 'B', 'C', 'D'],
+    })
+
+    const hadStructuredClone = 'structuredClone' in globalThis
+    const original = globalThis.structuredClone
+    // Simulate WeChat miniprogram base library without structuredClone.
+    // @ts-expect-error intentional delete for runtime compat test
+    delete globalThis.structuredClone
+
+    try {
+      const doc = await getSession(sessionId)
+      expect(doc.sessionId).toBe(sessionId)
+      expect(doc.seats).toHaveLength(4)
+
+      doc.seats[0].chips = 999
+      const again = await getSession(sessionId)
+      expect(again.seats[0].chips).toBe(0)
+    } finally {
+      if (hadStructuredClone) {
+        globalThis.structuredClone = original
+      }
+    }
+  })
 })

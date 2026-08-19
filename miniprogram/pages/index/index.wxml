@@ -1,30 +1,156 @@
-<view class="page">
-  <view class="brand">
-    <text class="title">麻将局记</text>
-    <text class="tagline">川麻血战 · 当场记分</text>
-  </view>
-
-  <button class="primary-btn" bindtap="onCreateTap">开新局</button>
-
-  <view class="join-block">
-    <view class="join-label">输入房间码加入（只读）</view>
-    <view class="join-row">
-      <input
-        class="join-input"
-        maxlength="6"
-        placeholder="房间码"
-        placeholder-class="join-ph"
-        value="{{joinCode}}"
-        bindinput="onJoinCodeInput"
-      />
-      <button
-        class="join-btn"
-        loading="{{joining}}"
-        disabled="{{joining}}"
-        bindtap="onJoinTap"
-      >加入</button>
+<view class="page" style="padding-top: {{statusBarHeight}}px;">
+  <view class="topbar">
+    <view class="tile-mark">
+      <view class="tile-dot"></view>
+      <view class="tile-dot"></view>
+      <view class="tile-dot"></view>
+      <view class="tile-dot"></view>
+    </view>
+    <text class="brand">麻将局记</text>
+    <view class="profile" hover-class="profile--pressed" bindtap="onProfileTap">
+      <view class="profile-head"></view>
+      <view class="profile-body"></view>
     </view>
   </view>
 
-  <button class="ghost-btn" bindtap="onRankTap">年度榜</button>
+  <scroll-view class="body" scroll-y>
+    <view class="section">
+      <view class="section-head">
+        <view class="badge badge--meadow">
+          <view class="plus-h"></view>
+          <view class="plus-v"></view>
+        </view>
+        <view class="section-copy">
+          <text class="section-title">快速开局</text>
+          <text class="section-sub">设好底分，邀请牌友用房间码入座</text>
+        </view>
+      </view>
+
+      <view class="well">
+        <view class="field">
+          <text class="field-label">底分</text>
+          <view class="chip-row">
+            <view
+              wx:for="{{chipOptions}}"
+              wx:key="*this"
+              class="chip {{chipValueYuan === item ? 'chip--on' : ''}}"
+              hover-class="chip--pressed"
+              data-value="{{item}}"
+              bindtap="onChipTap"
+            >{{item}}</view>
+          </view>
+        </view>
+      </view>
+
+      <button
+        class="cta cta--meadow"
+        hover-class="cta--meadow-pressed"
+        loading="{{creating}}"
+        disabled="{{creating}}"
+        bindtap="onCreateTap"
+      >开始征程</button>
+    </view>
+
+    <view class="section">
+      <view class="section-head">
+        <view class="badge badge--wood">
+          <view class="enter-box"></view>
+          <view class="enter-arrow"></view>
+        </view>
+        <view class="section-copy">
+          <text class="section-title">加入对局</text>
+          <text class="section-sub">输入 4 位房间码，围观或再入已有征程</text>
+        </view>
+      </view>
+
+      <view class="code-row">
+        <view
+          wx:for="{{joinCells}}"
+          wx:key="slot"
+          class="code-cell {{item.ch ? 'code-cell--on' : ''}}"
+        >
+          <text>{{item.ch || '—'}}</text>
+        </view>
+        <input
+          class="code-ghost"
+          maxlength="4"
+          value="{{joinCode}}"
+          hold-keyboard
+          confirm-type="done"
+          bindinput="onJoinCodeInput"
+          bindconfirm="onJoinTap"
+        />
+      </view>
+
+      <button
+        class="cta cta--wood"
+        hover-class="cta--wood-pressed"
+        loading="{{joining}}"
+        disabled="{{joining || !canJoin}}"
+        bindtap="onJoinTap"
+      >加入征程</button>
+    </view>
+
+    <view class="section section--last">
+      <view class="section-head">
+        <view class="badge badge--muted">
+          <view class="clock-face"></view>
+        </view>
+        <view class="section-copy">
+          <text class="section-title">最近征程</text>
+        </view>
+      </view>
+
+      <view wx:if="{{recents.length === 0}}" class="empty">
+        开一局或加入房间后，会出现在这里。
+      </view>
+
+      <view
+        wx:for="{{recents}}"
+        wx:key="sessionId"
+        class="campaign {{item.active ? '' : 'campaign--done'}}"
+        data-id="{{item.sessionId}}"
+        bindtap="onRecentTap"
+      >
+        <view class="campaign-mark {{item.active ? 'campaign-mark--live' : 'campaign-mark--done'}}">
+          <view wx:if="{{item.active}}" class="people">
+            <view class="people-a"></view>
+            <view class="people-b"></view>
+          </view>
+          <view wx:else class="flag"></view>
+        </view>
+        <view class="campaign-copy">
+          <text class="campaign-title">{{item.title}}</text>
+          <text class="campaign-meta">{{item.meta}}</text>
+        </view>
+        <view
+          wx:if="{{item.active}}"
+          class="reenter"
+          hover-class="reenter--pressed"
+          data-id="{{item.sessionId}}"
+          catchtap="onRecentTap"
+        >再入局</view>
+        <text wx:else class="finished">已结束</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="dock" style="padding-bottom: {{safeBottom}}px;">
+    <view class="tab tab--on">
+      <view class="ico ico-home"></view>
+      <text>大厅</text>
+    </view>
+    <view class="tab" hover-class="tab--pressed" bindtap="onBattleTab">
+      <view class="ico ico-swords"></view>
+      <text>战场</text>
+    </view>
+    <view class="tab" hover-class="tab--pressed" bindtap="onHistoryTab">
+      <view class="ico ico-scroll"></view>
+      <text>流水</text>
+    </view>
+    <view class="tab" hover-class="tab--pressed" bindtap="onRankTap">
+      <view class="ico ico-cup"></view>
+      <text>榜</text>
+    </view>
+  </view>
 </view>

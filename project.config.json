@@ -4,10 +4,37 @@
   "setting": {
     "es6": true,
     "enhance": true,
-    "minified": true
+    "minified": true,
+    "postcss": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": [
+      "typescript"
+    ],
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "compileType": "miniprogram",
-  "appid": "touristappid",
+  "appid": "wx365b46bd16ff8a25",
   "projectname": "mahjong-juji",
-  "libVersion": "3.5.5"
+  "libVersion": "3.5.5",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

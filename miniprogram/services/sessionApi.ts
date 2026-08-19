@@ -192,7 +192,8 @@ function cloneSeats(seats: Seat[]): Seat[] {
 }
 
 function cloneDoc(doc: SessionDoc): SessionDoc {
-  return structuredClone(doc)
+  // WeChat miniprogram JS runtime lacks structuredClone; SessionDoc is plain JSON.
+  return JSON.parse(JSON.stringify(doc)) as SessionDoc
 }
 
 function requireMock(sessionId: string): MockEntry {

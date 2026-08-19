@@ -162,7 +162,7 @@ App({
     "minified": true
   },
   "compileType": "miniprogram",
-  "appid": "touristappid",
+  "appid": "wx365b46bd16ff8a25",
   "projectname": "tcmsp",
   "libVersion": "3.5.5"
 }

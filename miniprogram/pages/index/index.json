@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "麻将局记"
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#efe6d4",
+  "backgroundTextStyle": "dark"
 }

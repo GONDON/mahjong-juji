@@ -1,4 +1,5 @@
 page {
-  background-color: #111111;
-  color: #ffffff;
+  background-color: #e5f5fa;
+  color: #1c2e1c;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }

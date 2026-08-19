@@ -9,9 +9,9 @@
   ],
   "window": {
     "navigationBarTitleText": "麻将局记",
-    "navigationBarBackgroundColor": "#1a1a1a",
-    "navigationBarTextStyle": "white",
-    "backgroundColor": "#111111"
+    "navigationBarBackgroundColor": "#e5f5fa",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#e5f5fa"
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json"
