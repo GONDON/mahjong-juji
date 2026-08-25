@@ -133,7 +133,13 @@ Page({
           string,
         ],
       })
-      await enterSession({ sessionId })
+      try {
+        await enterSession({ sessionId })
+      } catch (err) {
+        console.error(err)
+        wx.showToast({ title: '加入失败', icon: 'none' })
+        return
+      }
       this.remember({
         sessionId,
         roomCode,

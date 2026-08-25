@@ -61,10 +61,17 @@ page {
 
 .profile {
   position: relative;
-  border: 4rpx solid #77562f;
-  border-radius: 50%;
+  overflow: hidden;
+  border: 6rpx solid #5a3f20;
+  border-radius: 8rpx;
   background: #f0e7d6;
   box-sizing: border-box;
+}
+
+.profile-face {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .profile--pressed {
