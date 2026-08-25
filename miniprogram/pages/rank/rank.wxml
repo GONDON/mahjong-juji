@@ -4,7 +4,7 @@
   <block wx:else>
     <view class="header">
       <text class="title">{{year}} 年度榜</text>
-      <text class="sub">按已结束夜局的人民币结算额统计</text>
+      <text class="sub">按已结束牌局的人民币结算额统计</text>
     </view>
 
     <view wx:if="{{empty}}" class="empty">暂无年度数据</view>

@@ -37,5 +37,5 @@
     loading="{{submitting}}"
     disabled="{{submitting}}"
     bindtap="onSubmit"
-  >创建夜局</button>
+  >创建牌局</button>
 </view>

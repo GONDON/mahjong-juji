@@ -237,7 +237,7 @@ Page({
     wx.navigateTo({
       url: `/pages/session/session?sessionId=${encodeURIComponent(sessionId)}`,
       fail: () => {
-        wx.showToast({ title: '夜局详情稍后开放', icon: 'none' })
+        wx.showToast({ title: '牌局详情稍后开放', icon: 'none' })
       },
     })
   },

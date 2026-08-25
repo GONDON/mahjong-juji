@@ -2,7 +2,7 @@
   <view wx:if="{{loading}}" class="hint">加载中…</view>
   <block wx:else>
     <view class="header">
-      <text class="title">夜局详情</text>
+      <text class="title">牌局详情</text>
       <text class="meta">房间码 {{roomCode}}</text>
       <text class="meta">面值 {{chipValueYuan}} 元/牌 · {{statusLabel}}</text>
     </view>
@@ -70,6 +70,6 @@
       class="end-btn"
       bindtap="onEndSession"
       disabled="{{busy}}"
-    >结束夜局</button>
+    >结束牌局</button>
   </block>
 </view>

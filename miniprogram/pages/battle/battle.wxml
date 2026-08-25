@@ -61,7 +61,7 @@
         <button class="bar-btn" disabled="{{busy || showSettle}}" bindtap="onSettleCycle">本轮结清</button>
         <button class="bar-btn" disabled="{{busy || showSettle || !canUndo}}" bindtap="onUndo">撤销上一胡</button>
       </block>
-      <button class="bar-btn bar-btn--ghost" bindtap="onSessionDetail">夜局详情</button>
+      <button class="bar-btn bar-btn--ghost" bindtap="onSessionDetail">牌局详情</button>
     </view>
   </block>
 
@@ -87,7 +87,7 @@
         </view>
       </view>
       <button class="confirm-btn" bindtap="onNextCycle">再开一轮</button>
-      <button class="bar-btn bar-btn--ghost end-btn" bindtap="onEndSession">结束夜局</button>
+      <button class="bar-btn bar-btn--ghost end-btn" bindtap="onEndSession">结束牌局</button>
     </view>
   </view>
 </view>

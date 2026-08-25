@@ -125,7 +125,7 @@ Page({
   async onEndSession() {
     if (this.data.busy || !this.data.canEnd) return
     const { confirm } = await wx.showModal({
-      title: '结束夜局',
+      title: '结束牌局',
       content: '结束后不可再开轮，已结算轮次会保留。确定？',
     })
     if (!confirm) return
