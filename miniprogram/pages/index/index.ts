@@ -3,6 +3,7 @@ import {
   CHARACTER_STORAGE_KEY,
   avatarSrc,
   isCharacterComplete,
+  preferLocalCharacter,
   type CharacterCard,
 } from '../../domain/character'
 import {
@@ -11,6 +12,7 @@ import {
   getCharacter,
   getSession,
   getSessionByRoomCode,
+  upsertCharacter,
   type SessionDoc,
 } from '../../services/sessionApi'
 import {
@@ -136,9 +138,8 @@ Page({
       try {
         await enterSession({ sessionId })
       } catch (err) {
+        // createSession already inserts the creator into members; do not abort.
         console.error(err)
-        wx.showToast({ title: '加入失败', icon: 'none' })
-        return
       }
       this.remember({
         sessionId,
@@ -239,11 +240,22 @@ Page({
     const local = readLocalCard()
     this.paintProfile(local)
     try {
-      const card = await getCharacter()
+      const cloud = await getCharacter()
+      const { card, shouldRetryUpsert } = preferLocalCharacter(local, cloud)
       if (card) {
         writeLocalCard(card)
         this.paintProfile(card)
-      } else if (!local) {
+        if (shouldRetryUpsert && isCharacterComplete(card)) {
+          try {
+            await upsertCharacter({
+              nickname: card.nickname,
+              avatarId: card.avatarId,
+            })
+          } catch (err) {
+            console.error(err)
+          }
+        }
+      } else {
         this.paintProfile(null)
       }
     } catch (err) {

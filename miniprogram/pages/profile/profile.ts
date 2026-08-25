@@ -3,6 +3,8 @@ import {
   CHARACTER_STORAGE_KEY,
   SELECTABLE_AVATAR_IDS,
   avatarSrc,
+  isCharacterComplete,
+  preferLocalCharacter,
   validateCharacter,
   type CharacterCard,
 } from '../../domain/character'
@@ -56,12 +58,25 @@ Page({
   },
 
   onShow() {
-    paintCard(this, readLocalCard())
+    const local = readLocalCard()
+    paintCard(this, local)
     getCharacter()
-      .then((card) => {
+      .then(async (cloud) => {
+        const { card, shouldRetryUpsert } = preferLocalCharacter(local, cloud)
         if (!card) return
         writeLocalCard(card)
         paintCard(this, card)
+        if (shouldRetryUpsert && isCharacterComplete(card)) {
+          try {
+            await upsertCharacter({
+              nickname: card.nickname,
+              avatarId: card.avatarId,
+              sessionId: this.data.sessionId || undefined,
+            })
+          } catch (err) {
+            console.error(err)
+          }
+        }
       })
       .catch((err) => {
         console.error(err)

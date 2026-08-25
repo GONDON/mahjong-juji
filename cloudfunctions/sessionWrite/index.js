@@ -488,39 +488,46 @@ async function enterSession(event, openid) {
 async function claimSeat(event, openid) {
   requireOpenId(openid)
   const { sessionId, playerId } = event
-  const { doc, id } = await loadById(sessionId)
-  if (!canMutateSeats(doc.status)) {
-    throw new Error('session not open for seats')
-  }
   const card = await loadUserCard(openid)
   if (!isCharacterComplete(card)) {
     throw new Error('character incomplete')
   }
   const snap = memberSnapshot(card)
-  doc.members = doc.members || []
-  if (!doc.members.some((m) => m.openId === openid)) {
-    doc.members = upsertMember(
-      doc.members,
-      { openId: openid, ...snap },
-      Date.now(),
-    )
-  }
-  const target = (doc.seats || []).find((s) => s.playerId === playerId)
-  if (target && target.claimedOpenId && target.claimedOpenId !== openid) {
-    throw new Error('seat occupied')
-  }
-  const result = applyClaimSeat(doc.seats, playerId, {
-    openId: openid,
-    nickname: snap.nickname,
-    avatarId: snap.avatarId,
+  const db = getDb()
+  const result = await db.runTransaction(async (transaction) => {
+    const res = await transaction.collection('sessions').doc(sessionId).get()
+    if (!res.data) throw new Error(`session not found: ${sessionId}`)
+    const doc = res.data
+    if (!canMutateSeats(doc.status)) {
+      throw new Error('session not open for seats')
+    }
+    doc.members = doc.members || []
+    if (!doc.members.some((m) => m.openId === openid)) {
+      doc.members = upsertMember(
+        doc.members,
+        { openId: openid, ...snap },
+        Date.now(),
+      )
+    }
+    const target = (doc.seats || []).find((s) => s.playerId === playerId)
+    if (target && target.claimedOpenId && target.claimedOpenId !== openid) {
+      throw new Error('seat occupied')
+    }
+    const claimed = applyClaimSeat(doc.seats, playerId, {
+      openId: openid,
+      nickname: snap.nickname,
+      avatarId: snap.avatarId,
+    })
+    if (!claimed.ok) {
+      if (claimed.error === 'occupied') throw new Error('seat occupied')
+      throw new Error(claimed.error)
+    }
+    applyClaimableSeats(doc, claimed.seats)
+    const { _id, ...payload } = doc
+    await transaction.collection('sessions').doc(sessionId).set({ data: payload })
+    return publicDoc(doc)
   })
-  if (!result.ok) {
-    if (result.error === 'occupied') throw new Error('seat occupied')
-    throw new Error(result.error)
-  }
-  applyClaimableSeats(doc, result.seats)
-  await save(id, doc)
-  return publicDoc(doc)
+  return result
 }
 
 async function unclaimSeat(event, openid) {

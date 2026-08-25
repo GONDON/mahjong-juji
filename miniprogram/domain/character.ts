@@ -59,3 +59,19 @@ export function memberSnapshot(
   }
   return { nickname: trimNickname(card.nickname), avatarId: card.avatarId }
 }
+
+/** Prefer newer local card after a failed cloud upsert; signal retry when local leads. */
+export function preferLocalCharacter(
+  local: CharacterCard | null,
+  cloud: CharacterCard | null,
+): { card: CharacterCard | null; shouldRetryUpsert: boolean } {
+  if (local && cloud) {
+    if ((local.updatedAt || 0) > (cloud.updatedAt || 0)) {
+      return { card: local, shouldRetryUpsert: true }
+    }
+    return { card: cloud, shouldRetryUpsert: false }
+  }
+  if (local && !cloud) return { card: local, shouldRetryUpsert: true }
+  if (!local && cloud) return { card: cloud, shouldRetryUpsert: false }
+  return { card: null, shouldRetryUpsert: false }
+}

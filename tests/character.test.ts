@@ -4,9 +4,20 @@ import {
   isCharacterComplete,
   memberSnapshot,
   PLACEHOLDER_AVATAR_ID,
+  preferLocalCharacter,
   UNSET_DISPLAY_NICKNAME,
   validateCharacter,
+  type CharacterCard,
 } from '../miniprogram/domain/character'
+
+function card(partial: Partial<CharacterCard> & Pick<CharacterCard, 'updatedAt'>): CharacterCard {
+  return {
+    openId: 'o1',
+    nickname: '阿强',
+    avatarId: 'avatar_01',
+    ...partial,
+  }
+}
 
 describe('character', () => {
   it('rejects empty name and placeholder avatar', () => {
@@ -33,5 +44,34 @@ describe('character', () => {
   it('points selectable faces at png and the empty frame at svg', () => {
     expect(avatarSrc('avatar_01')).toBe('/assets/avatars/avatar_01.png')
     expect(avatarSrc(PLACEHOLDER_AVATAR_ID)).toBe('/assets/avatars/avatar_00.svg')
+  })
+
+  it('preferLocalCharacter: newer local wins and retries upsert', () => {
+    expect(
+      preferLocalCharacter(card({ updatedAt: 200, nickname: '本地' }), card({ updatedAt: 100 })),
+    ).toEqual({ card: card({ updatedAt: 200, nickname: '本地' }), shouldRetryUpsert: true })
+  })
+
+  it('preferLocalCharacter: newer cloud wins without retry', () => {
+    expect(
+      preferLocalCharacter(card({ updatedAt: 100 }), card({ updatedAt: 200, nickname: '云端' })),
+    ).toEqual({ card: card({ updatedAt: 200, nickname: '云端' }), shouldRetryUpsert: false })
+  })
+
+  it('preferLocalCharacter: local-only retries; cloud-only does not', () => {
+    const local = card({ updatedAt: 50 })
+    expect(preferLocalCharacter(local, null)).toEqual({
+      card: local,
+      shouldRetryUpsert: true,
+    })
+    const cloud = card({ updatedAt: 50 })
+    expect(preferLocalCharacter(null, cloud)).toEqual({
+      card: cloud,
+      shouldRetryUpsert: false,
+    })
+    expect(preferLocalCharacter(null, null)).toEqual({
+      card: null,
+      shouldRetryUpsert: false,
+    })
   })
 })
