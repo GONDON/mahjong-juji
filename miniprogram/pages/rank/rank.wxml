@@ -7,7 +7,10 @@
       <text class="sub">按已结束牌局的人民币结算额统计</text>
     </view>
 
-    <view wx:if="{{empty}}" class="empty">暂无年度数据</view>
+    <view wx:if="{{empty}}" class="empty-state">
+      <image class="empty-state-img" src="/assets/empty.svg" mode="aspectFit" />
+      <text>打完牌局后，年度榜会出现在这里。</text>
+    </view>
 
     <block wx:else>
       <view class="section">

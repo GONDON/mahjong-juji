@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "选庄"
+  "navigationBarTitleText": "选庄",
+  "navigationBarBackgroundColor": "#fffefc",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#fffefc"
 }

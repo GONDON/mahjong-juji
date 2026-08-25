@@ -1,5 +1,8 @@
 {
   "navigationBarTitleText": "战场",
+  "navigationBarBackgroundColor": "#fffefc",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#fffefc",
   "usingComponents": {
     "hu-sheet": "/components/hu-sheet/hu-sheet"
   }

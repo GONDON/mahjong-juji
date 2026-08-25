@@ -23,10 +23,6 @@ export type RecentCampaignView = RecentCampaign & {
   active: boolean
 }
 
-export type TabTarget =
-  | { type: 'nav'; url: string }
-  | { type: 'toast'; title: string }
-
 export function selectChipValue(next: number, current: number): number {
   return (CHIP_OPTIONS as readonly number[]).includes(next) ? next : current
 }
@@ -91,25 +87,6 @@ export function sessionRoute(campaign: RecentCampaign): string {
     return `/pages/session/session?sessionId=${sessionId}`
   }
   return `/pages/dealer-pick/dealer-pick?sessionId=${sessionId}`
-}
-
-export function battleTabTarget(list: RecentCampaign[]): TabTarget {
-  const playing = list.find((item) => item.status === 'playing')
-  if (playing) return { type: 'nav', url: sessionRoute(playing) }
-  const live = list.find(
-    (item) => item.status === 'open' || item.status === 'settling',
-  )
-  if (live) return { type: 'nav', url: sessionRoute(live) }
-  return { type: 'toast', title: '先开一局或加入房间' }
-}
-
-export function historyTabTarget(list: RecentCampaign[]): TabTarget {
-  const latest = list[0]
-  if (!latest) return { type: 'toast', title: '还没有流水' }
-  return {
-    type: 'nav',
-    url: `/pages/session/session?sessionId=${encodeURIComponent(latest.sessionId)}`,
-  }
 }
 
 export function parseStoredCampaigns(raw: unknown): RecentCampaign[] {

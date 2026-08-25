@@ -19,9 +19,7 @@ import {
   CHIP_OPTIONS,
   DEFAULT_SEAT_NICKNAMES,
   RECENT_STORAGE_KEY,
-  battleTabTarget,
   canSubmitJoin,
-  historyTabTarget,
   joinCodeCells,
   normalizeJoinCode,
   parseStoredCampaigns,
@@ -30,7 +28,6 @@ import {
   sessionRoute,
   upsertRecentCampaign,
   type RecentCampaign,
-  type TabTarget,
 } from './indexState'
 
 function readLocalCard(): CharacterCard | null {
@@ -44,21 +41,6 @@ function readLocalCard(): CharacterCard | null {
 
 function writeLocalCard(card: CharacterCard) {
   wx.setStorageSync(CHARACTER_STORAGE_KEY, card)
-}
-
-function windowMetrics() {
-  const info =
-    typeof wx.getWindowInfo === 'function'
-      ? wx.getWindowInfo()
-      : wx.getSystemInfoSync()
-  const safeBottom =
-    info.safeArea && info.screenHeight
-      ? Math.max(0, info.screenHeight - info.safeArea.bottom)
-      : 0
-  return {
-    statusBarHeight: info.statusBarHeight || 20,
-    safeBottom,
-  }
 }
 
 function cellViews(code: string) {
@@ -77,8 +59,6 @@ function campaignFromDoc(doc: SessionDoc): RecentCampaign {
 
 Page({
   data: {
-    statusBarHeight: 20,
-    safeBottom: 0,
     chipOptions: CHIP_OPTIONS,
     chipValueYuan: 1,
     joinCode: '',
@@ -90,14 +70,6 @@ Page({
     recents: [] as ReturnType<typeof presentRecentCampaign>[],
     hasProfile: false,
     profileSrc: '',
-  },
-
-  onLoad() {
-    const metrics = windowMetrics()
-    this.setData({
-      statusBarHeight: metrics.statusBarHeight,
-      safeBottom: metrics.safeBottom,
-    })
   },
 
   onShow() {
@@ -212,14 +184,6 @@ Page({
     wx.navigateTo({ url: sessionRoute(campaign) })
   },
 
-  onBattleTab() {
-    this.follow(battleTabTarget(this.data.campaigns))
-  },
-
-  onHistoryTab() {
-    this.follow(historyTabTarget(this.data.campaigns))
-  },
-
   onRankTap() {
     wx.navigateTo({ url: '/pages/rank/rank' })
   },
@@ -311,13 +275,5 @@ Page({
         presentRecentCampaign(item, now),
       ),
     })
-  },
-
-  follow(target: TabTarget) {
-    if (target.type === 'toast') {
-      wx.showToast({ title: target.title, icon: 'none' })
-      return
-    }
-    wx.navigateTo({ url: target.url })
   },
 })

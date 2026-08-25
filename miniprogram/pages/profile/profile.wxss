@@ -1,18 +1,12 @@
-/* Character card — page tokens from DESIGN.md aliases */
 page {
-  --ink: #1c1917;
-  --panel: #ffffff;
-  --moss: #1c1917;
-  --sunlight: #f9c9b6;
-  --wood-border: #26190c;
-  background: #fff8f4;
+  background: var(--paper);
 }
 
 .page {
   min-height: 100vh;
   padding: 48rpx 32rpx 80rpx;
   box-sizing: border-box;
-  background: #fff8f4;
+  background: var(--paper);
   color: var(--ink);
 }
 
@@ -40,15 +34,15 @@ page {
   align-items: center;
   justify-content: center;
   background: var(--panel);
-  border: 4rpx solid var(--wood-border);
-  border-radius: 16rpx;
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: var(--radius-tile);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .avatar--on {
-  background: var(--sunlight);
-  border-width: 6rpx;
-  border-color: var(--wood-border);
+  background: var(--peach-wash);
+  border-width: var(--stroke);
 }
 
 .avatar--pressed {
@@ -66,13 +60,13 @@ page {
   font-size: 32rpx;
   color: var(--ink);
   background: var(--panel);
-  border-radius: 24rpx;
-  border: 4rpx solid var(--wood-border);
+  border-radius: var(--radius-tile);
+  border: var(--stroke-thin) solid var(--ink);
   box-sizing: border-box;
 }
 
 .nick-ph {
-  color: #5c574f;
+  color: var(--muted);
 }
 
 .hint {
@@ -80,20 +74,5 @@ page {
   margin-bottom: 40rpx;
   font-size: 26rpx;
   line-height: 1.45;
-  color: #5c574f;
-}
-
-.save-btn {
-  height: 104rpx;
-  line-height: 104rpx;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #ffffff;
-  background: var(--moss);
-  border-radius: 24rpx;
-  border: 4rpx solid var(--wood-border);
-}
-
-.save-btn--pressed {
-  opacity: 0.86;
+  color: var(--muted);
 }

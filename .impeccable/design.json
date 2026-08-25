@@ -1,74 +1,62 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-07T14:37:00.000Z",
+  "generatedAt": "2026-08-25T04:51:00.000Z",
   "title": "Design System: 麻将局记",
   "extensions": {
     "colorMeta": {
-      "meadow-green": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(0.99 0.004 90)",
+        "tonalRamp": ["#5c574f", "#8a847c", "#c4bfb8", "#e8e4de", "#fffefc", "#fffefc", "#ffffff", "#ffffff"]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": ["#5c574f", "#8a847c", "#c4bfb8", "#e8e4de", "#ffffff", "#ffffff", "#ffffff", "#ffffff"]
+      },
+      "ink": {
         "role": "primary",
-        "displayName": "Meadow Green",
-        "canonical": "oklch(0.55 0.12 145)",
-        "tonalRamp": ["#16351a", "#1f4a24", "#235b28", "#2f6f35", "#3e8343", "#5a9a5c", "#7fb57f", "#b8d9b8"]
+        "displayName": "Ink",
+        "canonical": "oklch(0.21 0.01 55)",
+        "tonalRamp": ["#0d0c0b", "#141311", "#1c1917", "#3a3632", "#5c574f", "#8a847c", "#c4bfb8", "#e8e4de"]
       },
-      "meadow-deep": {
-        "role": "primary",
-        "displayName": "Meadow Deep",
-        "canonical": "oklch(0.42 0.10 145)",
-        "tonalRamp": ["#102418", "#183520", "#235b28", "#2a6a30", "#3e8343", "#5a9a5c", "#8fbf8f", "#d2e8d2"]
-      },
-      "sky-day": {
+      "muted": {
         "role": "neutral",
-        "displayName": "Sky Day",
-        "canonical": "oklch(0.96 0.018 220)",
-        "tonalRamp": ["#6a8a96", "#8eadb8", "#b3ced6", "#cfe3ea", "#e5f5fa", "#eef8fb", "#f5fbfd", "#ffffff"]
+        "displayName": "Muted",
+        "canonical": "oklch(0.45 0.015 70)",
+        "tonalRamp": ["#1c1917", "#3a3632", "#5c574f", "#6f6a62", "#8a847c", "#a8a39c", "#c4bfb8", "#e8e4de"]
       },
-      "panel-wood": {
+      "peach": {
         "role": "neutral",
-        "displayName": "Panel Wood",
-        "canonical": "oklch(0.93 0.025 85)",
-        "tonalRamp": ["#8a7a5c", "#a99878", "#c4b496", "#d9cdb6", "#f0e7d6", "#f5efe4", "#faf6ef", "#fffdf9"]
+        "displayName": "Peach",
+        "canonical": "oklch(0.86 0.06 45)",
+        "tonalRamp": ["#8a5a48", "#c48a74", "#e2b09c", "#f9c9b6", "#fde8dc", "#fef3ec", "#fffaf7", "#ffffff"]
       },
-      "ink-soil": {
+      "peach-wash": {
         "role": "neutral",
-        "displayName": "Ink Soil",
-        "canonical": "oklch(0.28 0.04 145)",
-        "tonalRamp": ["#0c160c", "#142014", "#1c2e1c", "#2a402a", "#3d553d", "#5b675b", "#8a948a", "#c5cbc5"]
+        "displayName": "Peach Wash",
+        "canonical": "oklch(0.94 0.03 45)",
+        "tonalRamp": ["#f9c9b6", "#fbd4c4", "#fde8dc", "#fef3ec", "#fffaf7", "#fffefc", "#ffffff", "#ffffff"]
       },
-      "muted-ink": {
-        "role": "neutral",
-        "displayName": "Muted Ink",
-        "canonical": "oklch(0.50 0.025 145)",
-        "tonalRamp": ["#2a322a", "#3d463d", "#5b675b", "#6f7a6f", "#8a948a", "#a8b0a8", "#c8cec8", "#e4e7e4"]
-      },
-      "wood-frame": {
-        "role": "neutral",
-        "displayName": "Wood Frame",
-        "canonical": "oklch(0.48 0.07 70)",
-        "tonalRamp": ["#3a2814", "#4d361c", "#77562f", "#8f6a3c", "#a88452", "#c4a574", "#ddc9a6", "#f0e4d0"]
-      },
-      "harvest-gold": {
+      "dealer": {
         "role": "secondary",
-        "displayName": "Harvest Gold",
-        "canonical": "oklch(0.78 0.12 85)",
-        "tonalRamp": ["#6a5018", "#8f6e22", "#b89230", "#dbb155", "#e4c16e", "#edd28f", "#f5e4b8", "#fbf3dc"]
+        "displayName": "Dealer",
+        "canonical": "oklch(0.76 0.14 85)",
+        "tonalRamp": ["#6a5018", "#8f6e22", "#b89230", "#d4a017", "#e4c16e", "#edd28f", "#f5e4b8", "#fbf3dc"]
       },
-      "clay-loss": {
+      "loss": {
         "role": "tertiary",
-        "displayName": "Clay Loss",
-        "canonical": "oklch(0.55 0.14 25)",
-        "tonalRamp": ["#5a201e", "#7a302c", "#b54a46", "#c96662", "#d98a86", "#e5b0ad", "#f0d2d0", "#f8eaea"]
+        "displayName": "Loss",
+        "canonical": "oklch(0.62 0.13 28)",
+        "tonalRamp": ["#5a201e", "#7a302c", "#c45c4a", "#d98a86", "#e5b0ad", "#f0d2d0", "#f8eaea", "#fffefc"]
       },
-      "chip-gain": {
+      "gain": {
         "role": "tertiary",
-        "displayName": "Chip Gain",
-        "canonical": "oklch(0.58 0.14 145)",
-        "tonalRamp": ["#16351a", "#235b28", "#3a8f42", "#4fa556", "#6fba74", "#97cf9a", "#c2e3c3", "#e4f3e5"]
-      },
-      "border-soft": {
-        "role": "neutral",
-        "displayName": "Border Soft",
-        "canonical": "oklch(0.82 0.03 85)",
-        "tonalRamp": ["#7a7264", "#968e7e", "#b0a896", "#cdc3af", "#ddd6c6", "#ebe5d8", "#f5f1e8", "#fbf9f4"]
+        "displayName": "Gain",
+        "canonical": "oklch(0.52 0.11 150)",
+        "tonalRamp": ["#16351a", "#1f4a24", "#2f7d4a", "#4fa556", "#6fba74", "#97cf9a", "#c2e3c3", "#e4f3e5"]
       },
       "on-fill": {
         "role": "neutral",
@@ -110,88 +98,93 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "草地绿主行动：开局、确认录胡、确认选庄。",
-      "html": "<button class=\"ds-btn-primary\">开新局</button>",
-      "css": ".ds-btn-primary{background:#3e8343;color:#fff;border:3px solid #235b28;border-radius:8px;height:52px;padding:0 24px;font:600 18px/52px \"PingFang SC\",sans-serif;letter-spacing:.02em}.ds-btn-primary:hover,.ds-btn-primary:active{background:#235b28}.ds-btn-primary:focus-visible{outline:3px solid #dbb155;outline-offset:2px}"
+      "description": "墨黑主行动：开牌局、确认录胡、确认选庄。",
+      "html": "<button class=\"ds-btn-primary\">开牌局</button>",
+      "css": ".ds-btn-primary{background:#1c1917;color:#fff;border:3px solid #1c1917;border-radius:999px;height:52px;padding:0 24px;font:700 16px/52px \"PingFang SC\",sans-serif}.ds-btn-primary:hover,.ds-btn-primary:active{opacity:.86}.ds-btn-primary:focus-visible{outline:3px solid #1c1917;outline-offset:2px}"
     },
     {
       "name": "Ghost Button",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "次要入口：年度榜、底栏次要操作。",
-      "html": "<button class=\"ds-btn-ghost\">年度榜</button>",
-      "css": ".ds-btn-ghost{background:transparent;color:#1c2e1c;border:3px solid #77562f;border-radius:8px;height:48px;padding:0 24px;font:600 16px/48px \"PingFang SC\",sans-serif}.ds-btn-ghost:hover,.ds-btn-ghost:active{background:#f0e7d6}.ds-btn-ghost:focus-visible{outline:3px solid #3e8343;outline-offset:2px}"
+      "description": "次要入口：加入牌局、底栏次要操作。",
+      "html": "<button class=\"ds-btn-ghost\">加入牌局</button>",
+      "css": ".ds-btn-ghost{background:transparent;color:#1c1917;border:3px solid #1c1917;border-radius:999px;height:52px;padding:0 24px;font:700 16px/52px \"PingFang SC\",sans-serif}.ds-btn-ghost:hover,.ds-btn-ghost:active{background:#fde8dc}.ds-btn-ghost:focus-visible{outline:3px solid #1c1917;outline-offset:2px}"
     },
     {
       "name": "Room Code Input",
       "kind": "input",
       "refersTo": "input-field",
-      "description": "房间码输入：木色底 + 木框。",
+      "description": "房间码输入：白底 + 墨框。",
       "html": "<input class=\"ds-input\" placeholder=\"房间码\" value=\"A3K9\" />",
-      "css": ".ds-input{background:#f0e7d6;color:#1c2e1c;border:3px solid #77562f;border-radius:6px;height:44px;padding:0 14px;font:400 16px/44px \"PingFang SC\",sans-serif;letter-spacing:.12em;width:180px}.ds-input::placeholder{color:#5b675b;letter-spacing:0}.ds-input:focus{outline:none;border-color:#3e8343}.ds-input:focus-visible{outline:3px solid #3e8343;outline-offset:2px}"
+      "css": ".ds-input{background:#fff;color:#1c1917;border:2px solid #1c1917;border-radius:8px;height:48px;padding:0 14px;font:400 16px/48px \"PingFang SC\",sans-serif;letter-spacing:.12em;width:180px}.ds-input::placeholder{color:#5c574f;letter-spacing:0}.ds-input:focus{outline:none;border-width:3px}.ds-input:focus-visible{outline:3px solid #1c1917;outline-offset:2px}"
     },
     {
       "name": "Fan Chip",
       "kind": "chip",
       "refersTo": "chip-default",
-      "description": "番型 chip：未选木色，选中草地绿。",
+      "description": "番型 chip：未选白底墨边，选中墨底白字。",
       "html": "<div class=\"ds-row\"><span class=\"ds-chip\">清一色</span><span class=\"ds-chip ds-chip--on\">自摸</span></div>",
-      "css": ".ds-row{display:flex;gap:10px;flex-wrap:wrap}.ds-chip{display:inline-block;background:#f0e7d6;color:#1c2e1c;border:2px solid #77562f;border-radius:6px;padding:7px 12px;font:500 13px/1.3 \"PingFang SC\",sans-serif}.ds-chip--on{background:#3e8343;color:#fff;border-color:#235b28}"
+      "css": ".ds-row{display:flex;gap:10px;flex-wrap:wrap}.ds-chip{display:inline-block;background:#fff;color:#1c1917;border:2px solid #1c1917;border-radius:8px;padding:7px 12px;font:500 13px/1.3 \"PingFang SC\",sans-serif}.ds-chip--on{background:#1c1917;color:#fff;border-color:#1c1917}"
     },
     {
       "name": "Seat Tile",
       "kind": "custom",
       "refersTo": "seat-tile",
-      "description": "四方桌座位块：粗木框 + 可选庄金标。",
+      "description": "四方桌座位块：粗墨框 + 方头像 + 可选庄金标。",
       "html": "<div class=\"ds-seat\"><span class=\"ds-seat-pos\">下</span><span class=\"ds-seat-name\">阿强</span><span class=\"ds-seat-chips\">20</span><span class=\"ds-seat-badge\">庄</span></div>",
-      "css": ".ds-seat{position:relative;width:140px;background:#f0e7d6;color:#1c2e1c;border:4px solid #77562f;border-radius:8px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:\"PingFang SC\",sans-serif}.ds-seat-pos{font-size:12px;color:#5b675b}.ds-seat-name{font-size:14px;font-weight:600}.ds-seat-chips{font-size:28px;font-weight:700;line-height:1.1}.ds-seat-badge{position:absolute;top:6px;right:6px;background:#dbb155;color:#1c2e1c;border-radius:6px;padding:2px 5px;font-size:11px;font-weight:700}"
+      "css": ".ds-seat{position:relative;width:140px;background:#fff;color:#1c1917;border:3px solid #1c1917;border-radius:8px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:\"PingFang SC\",sans-serif}.ds-seat-pos{font-size:12px;color:#5c574f}.ds-seat-name{font-size:14px;font-weight:600}.ds-seat-chips{font-size:28px;font-weight:700;line-height:1.1}.ds-seat-badge{position:absolute;top:6px;right:6px;background:#d4a017;color:#1c1917;border-radius:8px;padding:2px 5px;font-size:11px;font-weight:700}"
     },
     {
       "name": "Dealer Badge",
       "kind": "chip",
       "refersTo": "badge-dealer",
-      "description": "稀缺金琥珀庄标。",
+      "description": "稀缺金标庄标。",
       "html": "<span class=\"ds-badge-dealer\">庄</span>",
-      "css": ".ds-badge-dealer{display:inline-block;background:#dbb155;color:#1c2e1c;border-radius:6px;padding:2px 5px;font:700 11px/1.2 \"PingFang SC\",sans-serif}"
+      "css": ".ds-badge-dealer{display:inline-block;background:#d4a017;color:#1c1917;border-radius:8px;padding:2px 5px;font:700 11px/1.2 \"PingFang SC\",sans-serif}"
     },
     {
       "name": "Bottom Sheet",
       "kind": "card",
       "refersTo": "sheet-panel",
-      "description": "录胡/结算底部面板：木色、无大阴影。",
+      "description": "录胡/结算底部面板：白纸、无大阴影。",
       "html": "<div class=\"ds-sheet\"><div class=\"ds-sheet-title\">录胡</div><p class=\"ds-sheet-body\">选择番型后确认</p><button class=\"ds-btn-primary\">确认</button></div>",
-      "css": ".ds-sheet{background:#f0e7d6;color:#1c2e1c;border-radius:10px 10px 0 0;border-top:4px solid #77562f;padding:14px;width:280px;font-family:\"PingFang SC\",sans-serif}.ds-sheet-title{font:700 17px/1.35 \"PingFang SC\",sans-serif;margin:0 0 8px}.ds-sheet-body{margin:0 0 14px;color:#5b675b;font-size:14px}.ds-btn-primary{background:#3e8343;color:#fff;border:3px solid #235b28;border-radius:8px;height:48px;width:100%;font:600 16px/48px \"PingFang SC\",sans-serif}"
+      "css": ".ds-sheet{background:#fff;color:#1c1917;border-radius:8px 8px 0 0;border-top:3px solid #1c1917;padding:14px;width:280px;font-family:\"PingFang SC\",sans-serif}.ds-sheet-title{font:700 17px/1.35 \"PingFang SC\",sans-serif;margin:0 0 8px}.ds-sheet-body{margin:0 0 14px;color:#5c574f;font-size:14px}.ds-btn-primary{background:#1c1917;color:#fff;border:3px solid #1c1917;border-radius:999px;height:48px;width:100%;font:700 16px/48px \"PingFang SC\",sans-serif}"
     }
   ],
   "narrative": {
-    "northStar": "鹈鹕镇白天牌桌",
-    "overview": "界面像星露谷小镇的白天：柔光天空底、浅木色面板、草地绿主行动、粗木色像素边框。记分员在桌上单手操作时，界面应安静可读，俏皮但不喧哗。温暖来自材质与边框，不靠暗色氛围或霓虹。这是 product 工具 UI：熟悉、可点、信息优先。像素风服务于识别与情绪，不做成贴纸墙或过场动画秀。密度跟着任务走——战场页信息紧，首页可稍松。明确拒绝：过于幼齿的贴纸 / 表情包堆砌风；微信默认灰白表单、无个性后台感；电竞暗黑麻将客户端（霓虹、重金属、竞技 HUD）。也拒绝把当前 MVP 的 #111 / #1a1a1a 暗底当作品牌默认。",
+    "northStar": "纸上的牌友脸",
+    "overview": "界面像摊开的记分本：白纸底、黑墨线、方框里的 Noto 简笔画脸。主按钮是墨黑胶囊、白字。记分员在桌上单手操作时，界面应安静可读。俏皮来自脸和线，不来自贴纸墙或像素农庄菜单。这是 product 工具 UI：熟悉、可点、信息优先。简笔画服务于认人和情绪，不做成头像工坊 landing page。密度跟着任务走。战场页信息紧，首页可稍松。明确拒绝：过于幼齿的贴纸 / 表情包堆砌风；微信默认灰白表单、无个性后台感；电竞暗黑麻将客户端；已退役的星露谷草地绿 / 木框 / 羊皮纸。也拒绝把 MVP 的 #111 / #1a1a1a 暗底当作品牌默认。",
     "keyCharacteristics": [
-      "日间天空底 + 木色面板，永不默认暗黑",
-      "草地绿主 CTA；金琥珀仅用于「庄」等稀有状态",
-      "扁平：深度靠粗边框与色阶，不靠大阴影",
-      "厚边可点的像素块，像农庄菜单",
+      "白纸底 + 白板块，永不默认暗黑",
+      "墨黑主 CTA；金标仅用于「庄」",
+      "扁平：深度靠粗墨边与色阶，不靠大阴影",
+      "方框头像（不圆形）+ 胶囊按钮",
       "微信小程序实现：尺寸以 rpx 落地（本文 px ≈ 设计稿 1×，小程序约 ×2 rpx）"
     ],
     "rules": [
       {
-        "name": "The Daylight Table Rule",
-        "body": "默认表面必须是日间色（Sky Day / Panel Wood）。禁止把暗黑 #111/#1a1a1a 或电竞黑底当作默认主题。",
+        "name": "The Paper Rule",
+        "body": "默认表面必须是 Paper / Panel。禁止把暗黑 #111/#1a1a1a 或电竞黑底当作默认主题。本期不做暗色对翻。",
         "section": "colors"
       },
       {
-        "name": "The One Meadow Rule",
-        "body": "Meadow Green 只用于主行动与明确选中态；装饰性色块、大面积背景禁止刷绿。",
+        "name": "The Ink Button Rule",
+        "body": "主行动只用 Ink 填色 + 白字。选中 chip 同语言。禁止草地绿、禁止 Peach 当按钮。",
         "section": "colors"
       },
       {
         "name": "The Scarce Gold Rule",
-        "body": "Harvest Gold 专留给庄家及相关高价值状态；普通按钮、榜单行、装饰条不得用金。",
+        "body": "Dealer 金标专留给庄家及相关高价值状态；普通按钮、榜单行、装饰条不得用金。",
+        "section": "colors"
+      },
+      {
+        "name": "The Peach Illustration Rule",
+        "body": "Peach 只出现在简笔画内部，或角色卡选中格的浅洗。不得铺页面底、不得填 CTA。",
         "section": "colors"
       },
       {
         "name": "The System Type Rule",
-        "body": "不引入第二字体族做「更可爱」。可爱来自色与框，不来自花字。",
+        "body": "不引入第二字体族做「更可爱」。可爱来自脸与墨线，不来自花字。",
         "section": "typography"
       },
       {
@@ -200,8 +193,8 @@
         "section": "typography"
       },
       {
-        "name": "The Pixel Frame Rule",
-        "body": "可交互块用 2–3px（~4–6rpx）实色边框（Wood Frame 或 Meadow Green）。边框即深度；禁止用宽模糊阴影冒充层次。",
+        "name": "The Ink Frame Rule",
+        "body": "可交互块用 2–3px（~4–6rpx）实色 Ink 边框。边框即深度；禁止用宽模糊阴影冒充层次。",
         "section": "elevation"
       },
       {
@@ -211,20 +204,22 @@
       }
     ],
     "dos": [
-      "Do 用 Sky Day 作页面底、Panel Wood 作块面，保持「鹈鹕镇白天」。",
-      "Do 主行动只用 Meadow Green，并保证填充上的白字清晰。",
-      "Do 用粗木色/草绿边框表达可点与选中，而不是阴影。",
-      "Do 庄状态用 Harvest Gold 且保持稀缺。",
-      "Do 战场与录胡路径优先大热区、短路径（桌上优先）。"
+      "Do 用 Paper 作页面底、Panel 作块面，保持「纸上的牌友脸」。",
+      "Do 主行动只用 Ink 填色，并保证白字清晰。",
+      "Do 用粗墨边表达可点与选中，而不是阴影。",
+      "Do 庄状态用 Dealer 金且保持稀缺。",
+      "Do 战场与录胡路径优先大热区、短路径（桌上优先）。",
+      "Do 头像用方框里的简笔画 PNG/SVG。"
     ],
     "donts": [
       "Don't 使用过于幼齿的贴纸 / 表情包堆砌风。",
-      "Don't 退回微信默认灰白表单、无个性后台感（灰底灰按钮灰边）。",
-      "Don't 做成电竞暗黑麻将客户端（霓虹、重金属、竞技 HUD）。",
+      "Don't 退回微信默认灰白表单、无个性后台感。",
+      "Don't 做成电竞暗黑麻将客户端。",
       "Don't 把 MVP 暗底 #111 / #1a1a1a 当作成品主题。",
-      "Don't 给按钮/卡片加宽模糊大阴影，或 16px+ 过度圆角胶囊阵。",
-      "Don't 大面积铺 Harvest Gold 或把 Meadow Green 当背景漆满屏。",
-      "Don't 用渐变字、侧边彩条、玻璃拟态作为「像素可爱」的替代品。"
+      "Don't 给按钮/卡片加宽模糊大阴影。",
+      "Don't 大面积铺 Dealer 金，或把 Peach / 旧草地绿当背景或 CTA。",
+      "Don't 用渐变字、侧边彩条、玻璃拟态、假手绘浪边。",
+      "Don't 把 notion-avatar.app 的 landing 结构搬进记分工具。"
     ]
   }
 }

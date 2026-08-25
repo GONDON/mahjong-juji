@@ -30,8 +30,8 @@
   <text class="hint">这张卡绑在当前微信。改名字或头像，还是你这个人。</text>
 
   <button
-    class="save-btn"
-    hover-class="save-btn--pressed"
+    class="btn-ink"
+    hover-class="btn-ink--pressed"
     loading="{{saving}}"
     disabled="{{saving}}"
     bindtap="onSave"

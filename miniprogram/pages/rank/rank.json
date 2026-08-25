@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "年度榜"
+  "navigationBarTitleText": "年度榜",
+  "navigationBarBackgroundColor": "#fffefc",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#fffefc"
 }

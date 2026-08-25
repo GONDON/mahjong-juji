@@ -1,33 +1,18 @@
-<view class="page" style="padding-top: {{statusBarHeight}}px;">
-  <view class="topbar">
-    <view class="tile-mark">
-      <view class="tile-dot"></view>
-      <view class="tile-dot"></view>
-      <view class="tile-dot"></view>
-      <view class="tile-dot"></view>
-    </view>
-    <text class="brand">麻将局记</text>
-    <view class="profile" hover-class="profile--pressed" bindtap="onProfileTap">
-      <image
-        wx:if="{{hasProfile}}"
-        class="profile-face"
-        src="{{profileSrc}}"
-        mode="aspectFit"
-      />
-      <block wx:else>
-        <view class="profile-head"></view>
-        <view class="profile-body"></view>
-      </block>
-    </view>
-  </view>
-
+<view class="page">
   <scroll-view class="body" scroll-y>
+    <view class="identity">
+      <view class="profile face-frame" hover-class="profile--pressed" bindtap="onProfileTap">
+        <image
+          class="profile-face"
+          src="{{hasProfile ? profileSrc : '/assets/avatars/avatar_00.svg'}}"
+          mode="aspectFit"
+        />
+      </view>
+      <text class="identity-rank" hover-class="identity-rank--pressed" bindtap="onRankTap">年度榜</text>
+    </view>
     <view class="section">
       <view class="section-head">
-        <view class="badge badge--meadow">
-          <view class="plus-h"></view>
-          <view class="plus-v"></view>
-        </view>
+        <image class="badge" src="/assets/dice.svg" mode="aspectFit" />
         <view class="section-copy">
           <text class="section-title">快速开局</text>
           <text class="section-sub">设好底分，邀请牌友用房间码入座</text>
@@ -51,23 +36,20 @@
       </view>
 
       <button
-        class="cta cta--meadow"
-        hover-class="cta--meadow-pressed"
+        class="btn-ink"
+        hover-class="btn-ink--pressed"
         loading="{{creating}}"
         disabled="{{creating}}"
         bindtap="onCreateTap"
-      >开始征程</button>
+      >开牌局</button>
     </view>
 
     <view class="section">
       <view class="section-head">
-        <view class="badge badge--wood">
-          <view class="enter-box"></view>
-          <view class="enter-arrow"></view>
-        </view>
+        <image class="badge" src="/assets/ico-enter.svg" mode="aspectFit" />
         <view class="section-copy">
-          <text class="section-title">加入对局</text>
-          <text class="section-sub">输入 4 位房间码，围观或再入已有征程</text>
+          <text class="section-title">加入牌局</text>
+          <text class="section-sub">输入 4 位房间码，围观或再入已有牌局</text>
         </view>
       </view>
 
@@ -77,7 +59,7 @@
           wx:key="slot"
           class="code-cell {{item.ch ? 'code-cell--on' : ''}}"
         >
-          <text>{{item.ch || '—'}}</text>
+          <text>{{item.ch || '-'}}</text>
         </view>
         <input
           class="code-ghost"
@@ -91,26 +73,25 @@
       </view>
 
       <button
-        class="cta cta--wood"
-        hover-class="cta--wood-pressed"
+        class="btn-ghost"
+        hover-class="btn-ghost--pressed"
         loading="{{joining}}"
         disabled="{{joining || !canJoin}}"
         bindtap="onJoinTap"
-      >加入征程</button>
+      >加入牌局</button>
     </view>
 
     <view class="section section--last">
       <view class="section-head">
-        <view class="badge badge--muted">
-          <view class="clock-face"></view>
-        </view>
+        <image class="badge" src="/assets/ico-clock.svg" mode="aspectFit" />
         <view class="section-copy">
-          <text class="section-title">最近征程</text>
+          <text class="section-title">最近牌局</text>
         </view>
       </view>
 
-      <view wx:if="{{recents.length === 0}}" class="empty">
-        开一局或加入房间后，会出现在这里。
+      <view wx:if="{{recents.length === 0}}" class="empty-state">
+        <image class="empty-state-img" src="/assets/empty.svg" mode="aspectFit" />
+        <text>开一局或输入房间码，牌局会出现在这里。</text>
       </view>
 
       <view
@@ -120,13 +101,11 @@
         data-id="{{item.sessionId}}"
         bindtap="onRecentTap"
       >
-        <view class="campaign-mark {{item.active ? 'campaign-mark--live' : 'campaign-mark--done'}}">
-          <view wx:if="{{item.active}}" class="people">
-            <view class="people-a"></view>
-            <view class="people-b"></view>
-          </view>
-          <view wx:else class="flag"></view>
-        </view>
+        <image
+          class="campaign-mark"
+          src="{{item.active ? '/assets/ico-table.svg' : '/assets/ico-scroll.svg'}}"
+          mode="aspectFit"
+        />
         <view class="campaign-copy">
           <text class="campaign-title">{{item.title}}</text>
           <text class="campaign-meta">{{item.meta}}</text>
@@ -142,23 +121,4 @@
       </view>
     </view>
   </scroll-view>
-
-  <view class="dock" style="padding-bottom: {{safeBottom}}px;">
-    <view class="tab tab--on">
-      <view class="ico ico-home"></view>
-      <text>大厅</text>
-    </view>
-    <view class="tab" hover-class="tab--pressed" bindtap="onBattleTab">
-      <view class="ico ico-swords"></view>
-      <text>战场</text>
-    </view>
-    <view class="tab" hover-class="tab--pressed" bindtap="onHistoryTab">
-      <view class="ico ico-scroll"></view>
-      <text>流水</text>
-    </view>
-    <view class="tab" hover-class="tab--pressed" bindtap="onRankTap">
-      <view class="ico ico-cup"></view>
-      <text>榜</text>
-    </view>
-  </view>
 </view>

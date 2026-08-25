@@ -4,10 +4,13 @@
     <view class="header">
       <text class="title">牌局详情</text>
       <text class="meta">房间码 {{roomCode}}</text>
-      <text class="meta">面值 {{chipValueYuan}} 元/牌 · {{statusLabel}}</text>
+      <text class="meta">面值 {{chipValueYuan}} 元/牌  {{statusLabel}}</text>
     </view>
 
-    <view wx:if="{{cycles.length === 0}}" class="empty">暂无已结算轮次</view>
+    <view wx:if="{{cycles.length === 0}}" class="empty-state">
+      <image class="empty-state-img" src="/assets/empty.svg" mode="aspectFit" />
+      <text>打完一轮并结清后，流水会出现在这里。</text>
+    </view>
 
     <view
       wx:for="{{cycles}}"
@@ -47,8 +50,8 @@
           class="hand"
         >
           <text class="hand-title">
-            第 {{hand.index}} 局 · 庄 {{hand.dealer}}（连{{hand.streak}}）
-            <text wx:if="{{hand.liuju}}"> · 流局</text>
+            第 {{hand.index}} 局  庄 {{hand.dealer}}（连{{hand.streak}}）
+            <text wx:if="{{hand.liuju}}">  流局</text>
           </text>
           <view wx:if="{{hand.hus.length === 0 && !hand.liuju}}" class="empty-sm">无胡</view>
           <view

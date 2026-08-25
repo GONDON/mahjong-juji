@@ -18,6 +18,10 @@
         <text class="roster-name">{{item.nickname}}</text>
       </view>
     </scroll-view>
+    <view wx:else class="empty-state">
+      <image class="empty-state-img" src="/assets/empty.svg" mode="aspectFit" />
+      <text>牌友进房后会出现在这里。点座位占座。</text>
+    </view>
 
     <view class="seat-grid">
       <view

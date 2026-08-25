@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   avatarSrc,
@@ -5,6 +6,7 @@ import {
   memberSnapshot,
   PLACEHOLDER_AVATAR_ID,
   preferLocalCharacter,
+  SELECTABLE_AVATAR_IDS,
   UNSET_DISPLAY_NICKNAME,
   validateCharacter,
   type CharacterCard,
@@ -24,7 +26,7 @@ describe('character', () => {
     expect(validateCharacter('  ', 'avatar_01').ok).toBe(false)
     expect(validateCharacter('阿强', PLACEHOLDER_AVATAR_ID).ok).toBe(false)
     expect(validateCharacter('阿强', 'avatar_99').ok).toBe(false)
-    expect(validateCharacter('阿强', 'avatar_12').ok).toBe(false)
+    expect(validateCharacter('阿强', 'avatar_18').ok).toBe(false)
   })
 
   it('accepts trimmed name and selectable avatar', () => {
@@ -32,6 +34,18 @@ describe('character', () => {
     expect(r).toEqual({ ok: true, nickname: '阿强', avatarId: 'avatar_03' })
     expect(isCharacterComplete({ nickname: '阿强', avatarId: 'avatar_03' })).toBe(true)
     expect(isCharacterComplete(null)).toBe(false)
+  })
+
+  it('offers seventeen selectable notion faces', () => {
+    expect(SELECTABLE_AVATAR_IDS).toHaveLength(17)
+    expect(validateCharacter('阿强', 'avatar_05').ok).toBe(true)
+    expect(validateCharacter('阿珍', 'avatar_17').ok).toBe(true)
+  })
+
+  it('ships a png for every selectable face', () => {
+    for (const id of SELECTABLE_AVATAR_IDS) {
+      expect(existsSync(`miniprogram/assets/avatars/${id}.png`), id).toBe(true)
+    }
   })
 
   it('member snapshot uses 牌友 when unset', () => {
@@ -43,6 +57,7 @@ describe('character', () => {
 
   it('points selectable faces at png and the empty frame at svg', () => {
     expect(avatarSrc('avatar_01')).toBe('/assets/avatars/avatar_01.png')
+    expect(avatarSrc('avatar_17')).toBe('/assets/avatars/avatar_17.png')
     expect(avatarSrc(PLACEHOLDER_AVATAR_ID)).toBe('/assets/avatars/avatar_00.svg')
   })
 

@@ -4,8 +4,8 @@
   <block wx:else>
     <!-- 顶栏 -->
     <view class="topbar">
-      <text class="topbar-main">庄 {{dealerNickname}} · 连×{{streak}} · 倍率×{{mult}}</text>
-      <text class="topbar-sub">第{{cycleIndex}}轮 · 第{{handIndex}}局 · {{roomCode}}</text>
+      <text class="topbar-main">庄 {{dealerNickname}}  连×{{streak}}  倍率×{{mult}}</text>
+      <text class="topbar-sub">第{{cycleIndex}}轮  第{{handIndex}}局  {{roomCode}}</text>
     </view>
 
     <scroll-view wx:if="{{members.length}}" class="presence" scroll-x>

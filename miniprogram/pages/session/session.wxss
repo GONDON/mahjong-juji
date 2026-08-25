@@ -2,13 +2,14 @@
   min-height: 100vh;
   padding: 32rpx 28rpx 80rpx;
   box-sizing: border-box;
-  background: #1a1a1a;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .hint {
   margin-top: 120rpx;
   text-align: center;
-  color: #888888;
+  color: var(--muted);
   font-size: 30rpx;
 }
 
@@ -20,36 +21,36 @@
   display: block;
   font-size: 40rpx;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--ink);
   margin-bottom: 12rpx;
 }
 
 .meta {
   display: block;
   font-size: 26rpx;
-  color: #7a9a7a;
+  color: var(--muted);
   margin-top: 6rpx;
 }
 
 .empty {
   text-align: center;
-  color: #666666;
+  color: var(--muted);
   font-size: 28rpx;
   padding: 48rpx 0;
 }
 
 .empty-sm {
   font-size: 24rpx;
-  color: #666666;
+  color: var(--muted);
   padding: 8rpx 0;
 }
 
 .cycle {
-  background: #222222;
-  border-radius: 16rpx;
+  background: var(--panel);
+  border-radius: var(--radius-tile);
   padding: 24rpx;
   margin-bottom: 24rpx;
-  border: 2rpx solid #333333;
+  border: var(--stroke-thin) solid var(--ink);
 }
 
 .cycle-head {
@@ -63,12 +64,12 @@
 .cycle-title {
   font-size: 30rpx;
   font-weight: 600;
-  color: #f0f0f0;
+  color: var(--ink);
 }
 
 .cycle-toggle {
   font-size: 24rpx;
-  color: #7a9a7a;
+  color: var(--muted);
 }
 
 .settle-list {
@@ -83,18 +84,18 @@
   align-items: center;
   gap: 16rpx;
   padding: 12rpx 8rpx;
-  border-bottom: 1rpx solid #2a2a2a;
+  border-bottom: 1rpx solid var(--ink);
 }
 
 .settle-name {
   flex: 1;
   font-size: 28rpx;
-  color: #e0e0e0;
+  color: var(--ink);
 }
 
 .settle-delta {
   font-size: 24rpx;
-  color: #888888;
+  color: var(--muted);
   min-width: 120rpx;
   text-align: right;
 }
@@ -107,17 +108,17 @@
 }
 
 .settle-yuan.up {
-  color: #6ecf8e;
+  color: var(--gain);
 }
 
 .settle-yuan.down {
-  color: #e07070;
+  color: var(--loss);
 }
 
 .hands {
   margin-top: 20rpx;
   padding-top: 16rpx;
-  border-top: 1rpx solid #333333;
+  border-top: 1rpx solid var(--ink);
 }
 
 .hand {
@@ -127,7 +128,7 @@
 .hand-title {
   display: block;
   font-size: 24rpx;
-  color: #aaaaaa;
+  color: var(--muted);
   margin-bottom: 8rpx;
 }
 
@@ -141,18 +142,26 @@
 
 .hu-main {
   font-size: 26rpx;
-  color: #dddddd;
+  color: var(--ink);
 }
 
 .hu-pay {
   font-size: 24rpx;
-  color: #888888;
+  color: var(--muted);
 }
 
 .end-btn {
   margin-top: 40rpx;
-  background: #3a3a3a;
-  color: #e0e0e0;
-  border-radius: 12rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  background: var(--ink);
+  color: var(--on-fill);
+  border-radius: var(--radius-pill);
+  border: var(--stroke) solid var(--ink);
   font-size: 28rpx;
+  font-weight: 700;
+}
+
+.end-btn::after {
+  border: none;
 }

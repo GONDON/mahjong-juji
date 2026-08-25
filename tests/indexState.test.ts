@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_SEAT_NICKNAMES,
-  battleTabTarget,
   canSubmitJoin,
   formatEndedAgo,
-  historyTabTarget,
   joinCodeCells,
   normalizeJoinCode,
   parseStoredCampaigns,
@@ -89,30 +87,6 @@ describe('lobby recent campaigns', () => {
       '/pages/dealer-pick/dealer-pick?sessionId=sess_1',
     )
     expect(sessionRoute(ended)).toBe('/pages/session/session?sessionId=sess_2')
-  })
-})
-
-describe('lobby tab targets', () => {
-  it('sends Battle to the latest live session, otherwise asks to start', () => {
-    expect(battleTabTarget([ended, playing])).toEqual({
-      type: 'nav',
-      url: '/pages/battle/battle?sessionId=sess_1',
-    })
-    expect(battleTabTarget([ended])).toEqual({
-      type: 'toast',
-      title: '先开一局或加入房间',
-    })
-  })
-
-  it('sends History to the latest campaign details', () => {
-    expect(historyTabTarget([playing, ended])).toEqual({
-      type: 'nav',
-      url: '/pages/session/session?sessionId=sess_1',
-    })
-    expect(historyTabTarget([])).toEqual({
-      type: 'toast',
-      title: '还没有流水',
-    })
   })
 })
 

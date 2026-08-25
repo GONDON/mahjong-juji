@@ -1,0 +1,19 @@
+/* 纸墨 token。page 与组件根都声明，isolated 组件不会丢变量。 */
+page,
+.paper-root {
+  --paper: #fffefc;
+  --panel: #ffffff;
+  --ink: #1c1917;
+  --muted: #5c574f;
+  --on-fill: #ffffff;
+  --peach: #f9c9b6;
+  --peach-wash: #fde8dc;
+  --dealer: #d4a017;
+  --gain: #2f7d4a;
+  --loss: #c45c4a;
+  --stroke: 6rpx;
+  --stroke-thin: 4rpx;
+  --radius-tile: 16rpx;
+  --radius-pill: 999rpx;
+  --mask: rgba(28, 25, 23, 0.45);
+}
