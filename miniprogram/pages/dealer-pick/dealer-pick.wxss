@@ -13,7 +13,7 @@
 }
 
 .header {
-  margin-bottom: 48rpx;
+  margin-bottom: 32rpx;
 }
 
 .title {
@@ -38,6 +38,45 @@
   line-height: 1.5;
 }
 
+.roster {
+  width: 100%;
+  white-space: nowrap;
+  margin-bottom: 36rpx;
+}
+
+.roster-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120rpx;
+  margin-right: 20rpx;
+  vertical-align: top;
+}
+
+.roster-item--seated {
+  opacity: 0.45;
+}
+
+.roster-face {
+  width: 88rpx;
+  height: 88rpx;
+  border: 6rpx solid #26190c;
+  border-radius: 8rpx;
+  background: #fff8f4;
+  box-sizing: border-box;
+}
+
+.roster-name {
+  margin-top: 8rpx;
+  max-width: 120rpx;
+  font-size: 22rpx;
+  color: #cccccc;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .seat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -46,14 +85,14 @@
 }
 
 .seat-btn {
-  min-height: 220rpx;
-  padding: 36rpx 24rpx;
+  position: relative;
+  min-height: 260rpx;
+  padding: 28rpx 20rpx 24rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16rpx;
   background: #2a2a2a;
   border-radius: 20rpx;
   border: 4rpx solid #3a3a3a;
@@ -64,17 +103,55 @@
   border-color: #8aba4a;
 }
 
+.seat-face-hit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  width: 100%;
+  padding: 8rpx;
+  box-sizing: border-box;
+}
+
+.seat-face {
+  width: 88rpx;
+  height: 88rpx;
+  border: 6rpx solid #26190c;
+  border-radius: 8rpx;
+  background: #fff8f4;
+  box-sizing: border-box;
+}
+
 .seat-index {
   font-size: 24rpx;
   color: #888888;
 }
 
 .seat-name {
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: 700;
   color: #ffffff;
   text-align: center;
   word-break: break-all;
+}
+
+.dealer-chip {
+  margin-top: 16rpx;
+  min-width: 96rpx;
+  height: 56rpx;
+  padding: 0 20rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  background: #8aba4a;
+  border-radius: 12rpx;
+}
+
+.seat-btn--on .dealer-chip {
+  background: #c8e08a;
 }
 
 .confirm-btn {

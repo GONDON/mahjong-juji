@@ -5,19 +5,41 @@
     <view class="header">
       <text class="title">选择本轮首庄</text>
       <text wx:if="{{roomCode}}" class="room">房间码 {{roomCode}}</text>
-      <text class="sub">点选一人当庄，确认后发牌进战场（无骰子）</text>
+      <text class="sub">点头像占座；记分员点「庄」选庄后确认开局</text>
     </view>
+
+    <scroll-view wx:if="{{members.length}}" class="roster" scroll-x>
+      <view
+        wx:for="{{members}}"
+        wx:key="openId"
+        class="roster-item {{item.seated ? 'roster-item--seated' : ''}}"
+      >
+        <image class="roster-face" src="{{item.src}}" mode="aspectFit" />
+        <text class="roster-name">{{item.nickname}}</text>
+      </view>
+    </scroll-view>
 
     <view class="seat-grid">
       <view
         wx:for="{{seats}}"
         wx:key="playerId"
         class="seat-btn {{selectedId === item.playerId ? 'seat-btn--on' : ''}}"
-        data-id="{{item.playerId}}"
-        bindtap="onSelect"
       >
-        <text class="seat-index">座位 {{index + 1}}</text>
-        <text class="seat-name">{{item.nickname}}</text>
+        <view
+          class="seat-face-hit"
+          data-id="{{item.playerId}}"
+          bindtap="onSeatFaceTap"
+        >
+          <image class="seat-face" src="{{item.faceSrc}}" mode="aspectFit" />
+          <text class="seat-index">座位 {{index + 1}}</text>
+          <text class="seat-name">{{item.nickname}}</text>
+        </view>
+        <view
+          wx:if="{{isScorer}}"
+          class="dealer-chip"
+          data-id="{{item.playerId}}"
+          catchtap="onSelectDealer"
+        >庄</view>
       </view>
     </view>
 
