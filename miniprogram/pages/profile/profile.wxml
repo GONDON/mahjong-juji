@@ -1,0 +1,39 @@
+<view class="page">
+  <view class="section">
+    <text class="label">头像</text>
+    <view class="avatar-grid">
+      <view
+        wx:for="{{avatarOptions}}"
+        wx:key="id"
+        class="avatar {{avatarId === item.id ? 'avatar--on' : ''}}"
+        hover-class="avatar--pressed"
+        data-id="{{item.id}}"
+        bindtap="onAvatarTap"
+      >
+        <image class="avatar-img" src="{{item.src}}" mode="aspectFit" />
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="label">牌桌名</text>
+    <input
+      class="nick-input"
+      maxlength="12"
+      value="{{nickname}}"
+      placeholder="桌上怎么叫你"
+      placeholder-class="nick-ph"
+      bindinput="onNicknameInput"
+    />
+  </view>
+
+  <text class="hint">这张卡绑在当前微信。改名字或头像，还是你这个人。</text>
+
+  <button
+    class="save-btn"
+    hover-class="save-btn--pressed"
+    loading="{{saving}}"
+    disabled="{{saving}}"
+    bindtap="onSave"
+  >保存</button>
+</view>

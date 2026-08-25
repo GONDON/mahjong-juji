@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/profile/profile",
     "pages/create/create",
     "pages/dealer-pick/dealer-pick",
     "pages/battle/battle",
@@ -9,9 +10,9 @@
   ],
   "window": {
     "navigationBarTitleText": "麻将局记",
-    "navigationBarBackgroundColor": "#e5f5fa",
+    "navigationBarBackgroundColor": "#fffefc",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#e5f5fa"
+    "backgroundColor": "#fffefc"
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json"

@@ -1,6 +1,14 @@
 // @ts-nocheck
 import {
+  CHARACTER_STORAGE_KEY,
+  avatarSrc,
+  isCharacterComplete,
+  type CharacterCard,
+} from '../../domain/character'
+import {
   createSession,
+  enterSession,
+  getCharacter,
   getSession,
   getSessionByRoomCode,
   type SessionDoc,
@@ -22,6 +30,19 @@ import {
   type RecentCampaign,
   type TabTarget,
 } from './indexState'
+
+function readLocalCard(): CharacterCard | null {
+  try {
+    const raw = wx.getStorageSync(CHARACTER_STORAGE_KEY)
+    return raw && raw.avatarId ? raw : null
+  } catch {
+    return null
+  }
+}
+
+function writeLocalCard(card: CharacterCard) {
+  wx.setStorageSync(CHARACTER_STORAGE_KEY, card)
+}
 
 function windowMetrics() {
   const info =
@@ -65,6 +86,8 @@ Page({
     creating: false,
     campaigns: [] as RecentCampaign[],
     recents: [] as ReturnType<typeof presentRecentCampaign>[],
+    hasProfile: false,
+    profileSrc: '',
   },
 
   onLoad() {
@@ -76,6 +99,7 @@ Page({
   },
 
   onShow() {
+    this.refreshProfile()
     this.refreshRecents()
   },
 
@@ -109,6 +133,7 @@ Page({
           string,
         ],
       })
+      await enterSession({ sessionId })
       this.remember({
         sessionId,
         roomCode,
@@ -140,6 +165,13 @@ Page({
       const doc = await getSessionByRoomCode(code)
       if (!doc) {
         wx.showToast({ title: '房间不存在', icon: 'none' })
+        return
+      }
+      try {
+        await enterSession({ sessionId: doc.sessionId })
+      } catch (err) {
+        console.error(err)
+        wx.showToast({ title: '加入失败', icon: 'none' })
         return
       }
       this.remember(campaignFromDoc(doc))
@@ -186,7 +218,31 @@ Page({
   },
 
   onProfileTap() {
-    wx.showToast({ title: '角色卡即将开放', icon: 'none' })
+    wx.navigateTo({ url: '/pages/profile/profile' })
+  },
+
+  paintProfile(card: CharacterCard | null) {
+    const hasProfile = isCharacterComplete(card)
+    this.setData({
+      hasProfile,
+      profileSrc: hasProfile && card ? avatarSrc(card.avatarId) : '',
+    })
+  },
+
+  async refreshProfile() {
+    const local = readLocalCard()
+    this.paintProfile(local)
+    try {
+      const card = await getCharacter()
+      if (card) {
+        writeLocalCard(card)
+        this.paintProfile(card)
+      } else if (!local) {
+        this.paintProfile(null)
+      }
+    } catch (err) {
+      console.error(err)
+    }
   },
 
   remember(campaign: RecentCampaign) {
@@ -233,7 +289,9 @@ Page({
     const now = Date.now()
     this.setData({
       campaigns,
-      recents: campaigns.map((item) => presentRecentCampaign(item, now)),
+      recents: campaigns.map((item) =>
+        presentRecentCampaign(item, now),
+      ),
     })
   },
 
