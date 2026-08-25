@@ -3,10 +3,12 @@
  *
  * Client: wx.cloud.callFunction({ name: 'sessionWrite', data: { action, ... } })
  * Actions: createSession, getSession, getSessionByRoomCode, startCycle,
- *   appendHu, liuju, undoLastHu, settleCycleManual, endSession, listYearSettlements
+ *   appendHu, liuju, undoLastHu, settleCycleManual, endSession, listYearSettlements,
+ *   whoami, getCharacter, upsertCharacter, enterSession, claimSeat, unclaimSeat,
+ *   scorerUnclaimSeat, scorerRenameSeat
  *
  * Collections: denormalized `sessions` docs (same shape as mock SessionDoc +
- * scorerOpenId, undoStack, dealerPickId).
+ * scorerOpenId, undoStack, dealerPickId); `users` docs keyed by openId.
  */
 
 const cloud = require('wx-server-sdk')
@@ -16,6 +18,19 @@ const {
   openNextHand,
   settleCycle,
 } = require('./domain')
+const {
+  isCharacterComplete,
+  memberSnapshot,
+  validateCharacter,
+} = require('./character')
+const {
+  canMutateSeats,
+  upsertMember,
+  claimSeat: applyClaimSeat,
+  unclaimSeat: applyUnclaimSeat,
+  scorerUnclaimSeat: applyScorerUnclaimSeat,
+  renameUnclaimedSeat,
+} = require('./presence')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
@@ -40,6 +55,10 @@ function getDb() {
 
 function sessionsCol() {
   return getDb().collection('sessions')
+}
+
+function usersCol() {
+  return getDb().collection('users')
 }
 
 function publicDoc(doc) {
@@ -76,12 +95,33 @@ function applyTable(doc, table) {
   }
 }
 
+/** Merge claimable seat fields while preserving chips / hasHu. */
+function applyClaimableSeats(doc, next) {
+  doc.seats = next.map((s, i) => {
+    const prev = doc.seats[i]
+    const seat = {
+      playerId: s.playerId,
+      nickname: s.nickname,
+      chips: prev && prev.chips != null ? prev.chips : 0,
+      hasHu: prev && prev.hasHu != null ? prev.hasHu : false,
+    }
+    if (s.claimedOpenId) seat.claimedOpenId = s.claimedOpenId
+    if (s.avatarId) seat.avatarId = s.avatarId
+    return seat
+  })
+}
+
 function assertScorer(doc, openid) {
   if (!openid) throw new Error('missing openid')
   // Empty scorerOpenId is an invalid session — do not skip the gate.
   if (doc.scorerOpenId !== openid) {
     throw new Error('only the scorer can write this session')
   }
+}
+
+function requireOpenId(openid) {
+  if (!openid) throw new Error('missing openid')
+  return openid
 }
 
 /** trim + lower + collapse spaces; year board keys by playerId = nid_${norm}. */
@@ -115,9 +155,30 @@ async function save(id, doc) {
   await sessionsCol().doc(id).set({ data: payload })
 }
 
+async function loadUserCard(openid) {
+  try {
+    const res = await usersCol().doc(openid).get()
+    const data = res.data
+    if (!data || (typeof data === 'object' && !data.openId && !data.nickname)) {
+      return null
+    }
+    return data
+  } catch (e) {
+    const msg = (e && e.message) || String(e)
+    // Missing user doc is normal; collection / env failures must surface.
+    if (/does not exist|DOCUMENT_NOT_EXIST|not found/i.test(msg)) return null
+    throw e
+  }
+}
+
 function settleCurrent(doc) {
   if (!doc.currentCycle) throw new Error('no active cycle to settle')
-  const settlements = settleCycle(doc.seats, doc.chipValueYuan)
+  const settlements = settleCycle(doc.seats, doc.chipValueYuan).map((row, i) => ({
+    ...row,
+    openId: (doc.seats[i] && doc.seats[i].claimedOpenId) || null,
+    nickname:
+      (doc.seats[i] && doc.seats[i].nickname) || row.playerId,
+  }))
   doc.cycles.push({
     index: doc.currentCycle.index,
     dealerPickId: doc.dealerPickId || doc.currentCycle.dealer.dealerId,
@@ -156,6 +217,9 @@ async function createSession(event, openid) {
     hasHu: false,
   }))
   const createdAt = Date.now()
+  const userDoc = await loadUserCard(openid)
+  const snap = memberSnapshot(userDoc)
+  const members = [{ openId: openid, ...snap, joinedAt: createdAt }]
   const addRes = await col.add({
     data: {
       roomCode,
@@ -163,6 +227,7 @@ async function createSession(event, openid) {
       scorerOpenId: openid,
       scorerId: openid,
       seats,
+      members,
       status: 'open',
       cycles: [],
       hands: [],
@@ -196,6 +261,7 @@ async function startCycle(event, openid) {
   if (doc.currentCycle) throw new Error('cycle already in progress')
 
   const dealer = freshDealer(dealerId)
+  // Preserve claimedOpenId / avatarId / display nickname while resetting chips.
   const seats = doc.seats.map((s) => ({ ...s, chips: 20, hasHu: false }))
   const cycleIndex = (doc.cycles || []).length + 1
   doc.seats = seats
@@ -338,11 +404,171 @@ async function listYearSettlements(event) {
           sessionId: doc.sessionId || doc._id,
           playerId: s.playerId,
           yuan: s.yuan,
+          openId: s.openId != null ? s.openId : null,
         })
       }
     }
   }
   return rows
+}
+
+function whoami(openid) {
+  return { openId: requireOpenId(openid) }
+}
+
+async function getCharacter(openid) {
+  requireOpenId(openid)
+  return loadUserCard(openid)
+}
+
+async function upsertCharacter(event, openid) {
+  requireOpenId(openid)
+  const validated = validateCharacter(event.nickname, event.avatarId)
+  if (!validated.ok) throw new Error(validated.message)
+
+  const card = {
+    openId: openid,
+    nickname: validated.nickname,
+    avatarId: validated.avatarId,
+    updatedAt: Date.now(),
+  }
+  await usersCol().doc(openid).set({ data: card })
+
+  if (event.sessionId) {
+    const { doc, id } = await loadById(event.sessionId)
+    doc.members = upsertMember(
+      doc.members || [],
+      {
+        openId: openid,
+        nickname: card.nickname,
+        avatarId: card.avatarId,
+      },
+      Date.now(),
+    )
+    doc.seats = (doc.seats || []).map((s) =>
+      s.claimedOpenId === openid
+        ? { ...s, nickname: card.nickname, avatarId: card.avatarId }
+        : s,
+    )
+    await save(id, doc)
+  }
+
+  return card
+}
+
+async function enterSession(event, openid) {
+  requireOpenId(openid)
+  let sessionId = event.sessionId
+  let doc
+  let id
+
+  if (sessionId) {
+    ;({ doc, id } = await loadById(sessionId))
+  } else if (event.roomCode) {
+    const code = String(event.roomCode || '').toUpperCase()
+    const res = await sessionsCol().where({ roomCode: code }).limit(1).get()
+    if (!res.data || res.data.length === 0) throw new Error('session not found')
+    doc = res.data[0]
+    id = doc.sessionId || doc._id
+  } else {
+    throw new Error('session not found')
+  }
+
+  const userDoc = await loadUserCard(openid)
+  const snap = memberSnapshot(userDoc)
+  doc.members = upsertMember(
+    doc.members || [],
+    { openId: openid, ...snap },
+    Date.now(),
+  )
+  await save(id, doc)
+  return publicDoc(doc)
+}
+
+async function claimSeat(event, openid) {
+  requireOpenId(openid)
+  const { sessionId, playerId } = event
+  const { doc, id } = await loadById(sessionId)
+  if (!canMutateSeats(doc.status)) {
+    throw new Error('session not open for seats')
+  }
+  const card = await loadUserCard(openid)
+  if (!isCharacterComplete(card)) {
+    throw new Error('character incomplete')
+  }
+  const snap = memberSnapshot(card)
+  doc.members = doc.members || []
+  if (!doc.members.some((m) => m.openId === openid)) {
+    doc.members = upsertMember(
+      doc.members,
+      { openId: openid, ...snap },
+      Date.now(),
+    )
+  }
+  const target = (doc.seats || []).find((s) => s.playerId === playerId)
+  if (target && target.claimedOpenId && target.claimedOpenId !== openid) {
+    throw new Error('seat occupied')
+  }
+  const result = applyClaimSeat(doc.seats, playerId, {
+    openId: openid,
+    nickname: snap.nickname,
+    avatarId: snap.avatarId,
+  })
+  if (!result.ok) {
+    if (result.error === 'occupied') throw new Error('seat occupied')
+    throw new Error(result.error)
+  }
+  applyClaimableSeats(doc, result.seats)
+  await save(id, doc)
+  return publicDoc(doc)
+}
+
+async function unclaimSeat(event, openid) {
+  requireOpenId(openid)
+  const { sessionId, playerId } = event
+  const { doc, id } = await loadById(sessionId)
+  if (!canMutateSeats(doc.status)) {
+    throw new Error('session not open for seats')
+  }
+  const result = applyUnclaimSeat(doc.seats, playerId, openid)
+  if (!result.ok) {
+    throw new Error(result.error === 'not_owner' ? 'not owner' : result.error)
+  }
+  applyClaimableSeats(doc, result.seats)
+  await save(id, doc)
+  return publicDoc(doc)
+}
+
+async function scorerUnclaimSeat(event, openid) {
+  const { sessionId, playerId } = event
+  const { doc, id } = await loadById(sessionId)
+  assertScorer(doc, openid)
+  if (!canMutateSeats(doc.status)) {
+    throw new Error('session not open for seats')
+  }
+  const result = applyScorerUnclaimSeat(doc.seats, playerId)
+  if (!result.ok) {
+    throw new Error(result.error)
+  }
+  applyClaimableSeats(doc, result.seats)
+  await save(id, doc)
+  return publicDoc(doc)
+}
+
+async function scorerRenameSeat(event, openid) {
+  const { sessionId, playerId, nickname } = event
+  const { doc, id } = await loadById(sessionId)
+  assertScorer(doc, openid)
+  if (!canMutateSeats(doc.status)) {
+    throw new Error('session not open for seats')
+  }
+  const result = renameUnclaimedSeat(doc.seats, playerId, nickname)
+  if (!result.ok) {
+    throw new Error(result.error)
+  }
+  applyClaimableSeats(doc, result.seats)
+  await save(id, doc)
+  return publicDoc(doc)
 }
 
 exports.main = async function main(event = {}) {
@@ -370,6 +596,22 @@ exports.main = async function main(event = {}) {
         return ok(await endSession(event, OPENID))
       case 'listYearSettlements':
         return ok(await listYearSettlements(event))
+      case 'whoami':
+        return ok(whoami(OPENID))
+      case 'getCharacter':
+        return ok(await getCharacter(OPENID))
+      case 'upsertCharacter':
+        return ok(await upsertCharacter(event, OPENID))
+      case 'enterSession':
+        return ok(await enterSession(event, OPENID))
+      case 'claimSeat':
+        return ok(await claimSeat(event, OPENID))
+      case 'unclaimSeat':
+        return ok(await unclaimSeat(event, OPENID))
+      case 'scorerUnclaimSeat':
+        return ok(await scorerUnclaimSeat(event, OPENID))
+      case 'scorerRenameSeat':
+        return ok(await scorerRenameSeat(event, OPENID))
       default:
         return fail(`unknown action: ${action}`)
     }

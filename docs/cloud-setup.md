@@ -21,16 +21,19 @@ export const USE_MOCK = false                   // was true
 
 `project.config.json` already sets `cloudfunctionRoot` to `cloudfunctions/`.
 
-## 3. Create the database collection
+## 3. Create the database collections
 
-In the cloud console, create collection **`sessions`** (permissions: only creator / admin write is fine for MVP; the cloud function uses server-side SDK).
+In the cloud console, create:
+
+1. **`sessions`** — denormalized session docs (permissions: only creator / admin write is fine for MVP; the cloud function uses server-side SDK).
+2. **`users`** — character cards keyed by WeChat openId (`_id` = openId). Same permissions as above.
 
 ## 4. Deploy `sessionWrite`
 
 1. In DevTools, right-click `cloudfunctions/sessionWrite` → **上传并部署：云端安装依赖**.
 2. Confirm the function appears under 云函数 and uses the same env as `CLOUD_ENV_ID`.
 
-The function routes on `action` and checks `cloud.getWXContext().OPENID` against `scorerOpenId` for write actions (`startCycle`, `appendHu`, `liuju`, `undoLastHu`, `settleCycleManual`, `endSession`).
+The function routes on `action` and checks `cloud.getWXContext().OPENID` against `scorerOpenId` for scorer write actions (`startCycle`, `appendHu`, `liuju`, `undoLastHu`, `settleCycleManual`, `endSession`, `scorerUnclaimSeat`, `scorerRenameSeat`). Character / seat-claim actions (`whoami`, `getCharacter`, `upsertCharacter`, `enterSession`, `claimSeat`, `unclaimSeat`) use the caller's openId without requiring scorer.
 
 ## 5. Smoke on device / DevTools
 
