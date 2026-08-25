@@ -21,6 +21,8 @@ describe('sessionApi mock', () => {
 
     const opened = await getSession(sessionId)
     expect(opened.scorerId).toBe(MOCK_SCORER_ID)
+    expect(opened.members).toHaveLength(1)
+    expect(opened.seats.every((s) => !s.claimedOpenId)).toBe(true)
     const [idA, idB, idC] = opened.seats.map((s) => s.playerId)
     expect(idA).toMatch(/^nid_/)
     expect(idB).toMatch(/^nid_/)

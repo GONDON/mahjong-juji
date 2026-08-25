@@ -4,6 +4,8 @@ export interface SessionPlayerYuan {
   sessionId: string
   playerId: PlayerId
   yuan: number
+  /** Present when settlement carried a claimed seat openId. */
+  openId?: string | null
 }
 
 export interface PlayerYearStat {

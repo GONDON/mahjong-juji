@@ -14,9 +14,24 @@
  */
 
 import { USE_MOCK as CONFIG_USE_MOCK } from '../config'
+import {
+  isCharacterComplete,
+  memberSnapshot,
+  validateCharacter,
+  type CharacterCard,
+} from '../domain/character'
 import { freshDealer } from '../domain/dealer'
 import { commitHu, openNextHand } from '../domain/handFlow'
 import type { SessionPlayerYuan } from '../domain/leaderboard'
+import {
+  canMutateSeats,
+  claimSeat as applyClaimSeat,
+  renameUnclaimedSeat,
+  scorerUnclaimSeat as applyScorerUnclaimSeat,
+  unclaimSeat as applyUnclaimSeat,
+  upsertMember,
+  type SessionMember,
+} from '../domain/presence'
 import { settleCycle, type CycleSettlementRow } from '../domain/settleCycle'
 import type {
   DealerState,
@@ -27,6 +42,8 @@ import type {
   TableState,
   Transfer,
 } from '../domain/types'
+
+export type { SessionMember }
 
 /** Re-export from config so callers can feature-detect mock mode. */
 export const USE_MOCK = CONFIG_USE_MOCK
@@ -63,6 +80,13 @@ export interface SessionSeat {
   nickname: string
   chips: number
   hasHu: boolean
+  claimedOpenId?: string
+  avatarId?: string
+}
+
+export type SessionSettlementRow = CycleSettlementRow & {
+  openId: string | null
+  nickname: string
 }
 
 export interface CurrentCycle {
@@ -74,7 +98,7 @@ export interface CurrentCycle {
 export interface SettledCycle {
   index: number
   dealerPickId: PlayerId
-  settlements: CycleSettlementRow[]
+  settlements: SessionSettlementRow[]
   status: 'settled'
 }
 
@@ -103,6 +127,7 @@ export interface SessionDoc {
   /** Present on cloud sessions; mock may omit. */
   scorerOpenId?: string
   seats: SessionSeat[]
+  members: SessionMember[]
   status: SessionStatus
   currentCycle?: CurrentCycle
   cycles: SettledCycle[]
@@ -120,8 +145,20 @@ export const MOCK_SCORER_ID = 'mock-scorer'
  */
 let mockOpenId: string | null = null
 
+/** Actor for presence / character / enter (separate from scorer write assert). */
+let mockActorOpenId = MOCK_SCORER_ID
+const mockUsers = new Map<string, CharacterCard>()
+
 export function __setMockOpenId(openid: string | null): void {
   mockOpenId = openid
+}
+
+export function __setMockActor(openId: string): void {
+  mockActorOpenId = openId
+}
+
+export function __getMockActor(): string {
+  return mockActorOpenId
 }
 
 function assertMockScorer(doc: SessionDoc): void {
@@ -155,7 +192,7 @@ export interface CommitResult {
   truncated: Transfer[]
   bankruptIds: PlayerId[]
   cycleOver: boolean
-  settlements?: CycleSettlementRow[]
+  settlements?: SessionSettlementRow[]
 }
 
 interface MockEntry {
@@ -225,10 +262,14 @@ function applyTable(doc: SessionDoc, table: TableState): void {
   }
 }
 
-function settleCurrent(entry: MockEntry): CycleSettlementRow[] {
+function settleCurrent(entry: MockEntry): SessionSettlementRow[] {
   const { doc } = entry
   if (!doc.currentCycle) throw new Error('no active cycle to settle')
-  const settlements = settleCycle(doc.seats, doc.chipValueYuan)
+  const settlements = settleCycle(doc.seats, doc.chipValueYuan).map((row, i) => ({
+    ...row,
+    openId: doc.seats[i]?.claimedOpenId ?? null,
+    nickname: doc.seats[i]?.nickname ?? row.playerId,
+  }))
   doc.cycles.push({
     index: doc.currentCycle.index,
     dealerPickId: entry.dealerPickId ?? doc.currentCycle.dealer.dealerId,
@@ -247,6 +288,8 @@ export function __resetMockSessions(): void {
   mockStore.clear()
   roomIndex.clear()
   seq = 0
+  mockUsers.clear()
+  mockActorOpenId = MOCK_SCORER_ID
 }
 
 export async function createSession(input: {
@@ -267,6 +310,12 @@ export async function createSession(input: {
     hasHu: false,
   }))
 
+  const joinedAt = Date.now()
+  const snap = memberSnapshot(mockUsers.get(MOCK_SCORER_ID))
+  const members: SessionMember[] = [
+    { openId: MOCK_SCORER_ID, ...snap, joinedAt },
+  ]
+
   // scorerId is always MOCK_SCORER_ID in mock mode (documented constant).
   const doc: SessionDoc = {
     sessionId,
@@ -275,11 +324,12 @@ export async function createSession(input: {
     scorerId: MOCK_SCORER_ID,
     scorerOpenId: MOCK_SCORER_ID,
     seats,
+    members,
     status: 'open',
     cycles: [],
     hands: [],
     huEvents: [],
-    createdAt: Date.now(),
+    createdAt: joinedAt,
   }
 
   mockStore.set(sessionId, { doc, undoStack: [] })
@@ -374,7 +424,7 @@ export async function appendHu(
     truncated: result.truncated,
   })
 
-  let settlements: CycleSettlementRow[] | undefined
+  let settlements: SessionSettlementRow[] | undefined
   if (result.cycleOver) {
     settlements = settleCurrent(entry)
   }
@@ -450,7 +500,7 @@ export async function undoLastHu(sessionId: string): Promise<SessionDoc> {
 
 export async function settleCycleManual(
   sessionId: string,
-): Promise<CycleSettlementRow[]> {
+): Promise<SessionSettlementRow[]> {
   if (!USE_MOCK) {
     return callSessionWrite('settleCycleManual', { sessionId })
   }
@@ -492,9 +542,208 @@ export async function listYearSettlements(
           sessionId: doc.sessionId,
           playerId: s.playerId,
           yuan: s.yuan,
+          openId: s.openId ?? null,
         })
       }
     }
   }
   return rows
+}
+
+function applyClaimableSeats(
+  doc: SessionDoc,
+  next: { playerId: string; nickname: string; claimedOpenId?: string; avatarId?: string }[],
+): void {
+  doc.seats = next.map((s, i) => {
+    const prev = doc.seats[i]
+    const seat: SessionSeat = {
+      playerId: s.playerId,
+      nickname: s.nickname,
+      chips: prev?.chips ?? 0,
+      hasHu: prev?.hasHu ?? false,
+    }
+    if (s.claimedOpenId) seat.claimedOpenId = s.claimedOpenId
+    if (s.avatarId) seat.avatarId = s.avatarId
+    return seat
+  })
+}
+
+export async function whoami(): Promise<{ openId: string }> {
+  if (!USE_MOCK) {
+    return callSessionWrite('whoami')
+  }
+  return { openId: mockActorOpenId }
+}
+
+export async function getCharacter(): Promise<CharacterCard | null> {
+  if (!USE_MOCK) {
+    return callSessionWrite('getCharacter')
+  }
+  return mockUsers.get(mockActorOpenId) ?? null
+}
+
+export async function upsertCharacter(input: {
+  nickname: string
+  avatarId: string
+  sessionId?: string
+}): Promise<CharacterCard> {
+  if (!USE_MOCK) {
+    return callSessionWrite('upsertCharacter', { ...input })
+  }
+  const validated = validateCharacter(input.nickname, input.avatarId)
+  if (!validated.ok) throw new Error(validated.message)
+
+  const card: CharacterCard = {
+    openId: mockActorOpenId,
+    nickname: validated.nickname,
+    avatarId: validated.avatarId,
+    updatedAt: Date.now(),
+  }
+  mockUsers.set(mockActorOpenId, card)
+
+  if (input.sessionId) {
+    const entry = requireMock(input.sessionId)
+    const { doc } = entry
+    doc.members = upsertMember(
+      doc.members,
+      {
+        openId: mockActorOpenId,
+        nickname: card.nickname,
+        avatarId: card.avatarId,
+      },
+      Date.now(),
+    )
+    doc.seats = doc.seats.map((s) =>
+      s.claimedOpenId === mockActorOpenId
+        ? { ...s, nickname: card.nickname, avatarId: card.avatarId }
+        : s,
+    )
+  }
+
+  return { ...card }
+}
+
+export async function enterSession(input: {
+  sessionId?: string
+  roomCode?: string
+}): Promise<SessionDoc> {
+  if (!USE_MOCK) {
+    return callSessionWrite('enterSession', { ...input })
+  }
+
+  let sessionId = input.sessionId
+  if (!sessionId && input.roomCode) {
+    sessionId = roomIndex.get(input.roomCode.toUpperCase())
+  }
+  if (!sessionId) throw new Error('session not found')
+
+  const entry = requireMock(sessionId)
+  const { doc } = entry
+  const snap = memberSnapshot(mockUsers.get(mockActorOpenId))
+  doc.members = upsertMember(
+    doc.members,
+    { openId: mockActorOpenId, ...snap },
+    Date.now(),
+  )
+  return cloneDoc(doc)
+}
+
+export async function claimSeat(
+  sessionId: string,
+  playerId: string,
+): Promise<SessionDoc> {
+  if (!USE_MOCK) {
+    return callSessionWrite('claimSeat', { sessionId, playerId })
+  }
+  const entry = requireMock(sessionId)
+  const { doc } = entry
+  if (!canMutateSeats(doc.status)) {
+    throw new Error('session not open for seats')
+  }
+  const card = mockUsers.get(mockActorOpenId)
+  if (!isCharacterComplete(card)) {
+    throw new Error('character incomplete')
+  }
+  const snap = memberSnapshot(card)
+  if (!doc.members.some((m) => m.openId === mockActorOpenId)) {
+    doc.members = upsertMember(
+      doc.members,
+      { openId: mockActorOpenId, ...snap },
+      Date.now(),
+    )
+  }
+  const result = applyClaimSeat(doc.seats, playerId, {
+    openId: mockActorOpenId,
+    nickname: snap.nickname,
+    avatarId: snap.avatarId,
+  })
+  if (!result.ok) {
+    if (result.error === 'occupied') throw new Error('seat occupied')
+    throw new Error(result.error)
+  }
+  applyClaimableSeats(doc, result.seats)
+  return cloneDoc(doc)
+}
+
+export async function unclaimSeat(
+  sessionId: string,
+  playerId: string,
+): Promise<SessionDoc> {
+  if (!USE_MOCK) {
+    return callSessionWrite('unclaimSeat', { sessionId, playerId })
+  }
+  const entry = requireMock(sessionId)
+  const { doc } = entry
+  if (!canMutateSeats(doc.status)) {
+    throw new Error('session not open for seats')
+  }
+  const result = applyUnclaimSeat(doc.seats, playerId, mockActorOpenId)
+  if (!result.ok) {
+    throw new Error(result.error === 'not_owner' ? 'not owner' : result.error)
+  }
+  applyClaimableSeats(doc, result.seats)
+  return cloneDoc(doc)
+}
+
+export async function scorerUnclaimSeat(
+  sessionId: string,
+  playerId: string,
+): Promise<SessionDoc> {
+  if (!USE_MOCK) {
+    return callSessionWrite('scorerUnclaimSeat', { sessionId, playerId })
+  }
+  const entry = requireMock(sessionId)
+  const { doc } = entry
+  assertMockScorer(doc)
+  if (!canMutateSeats(doc.status)) {
+    throw new Error('session not open for seats')
+  }
+  const result = applyScorerUnclaimSeat(doc.seats, playerId)
+  if (!result.ok) {
+    throw new Error(result.error)
+  }
+  applyClaimableSeats(doc, result.seats)
+  return cloneDoc(doc)
+}
+
+export async function scorerRenameSeat(
+  sessionId: string,
+  playerId: string,
+  nickname: string,
+): Promise<SessionDoc> {
+  if (!USE_MOCK) {
+    return callSessionWrite('scorerRenameSeat', { sessionId, playerId, nickname })
+  }
+  const entry = requireMock(sessionId)
+  const { doc } = entry
+  assertMockScorer(doc)
+  if (!canMutateSeats(doc.status)) {
+    throw new Error('session not open for seats')
+  }
+  const result = renameUnclaimedSeat(doc.seats, playerId, nickname)
+  if (!result.ok) {
+    throw new Error(result.error)
+  }
+  applyClaimableSeats(doc, result.seats)
+  return cloneDoc(doc)
 }
