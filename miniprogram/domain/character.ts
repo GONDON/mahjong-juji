@@ -7,14 +7,6 @@ export const SELECTABLE_AVATAR_IDS = [
   'avatar_02',
   'avatar_03',
   'avatar_04',
-  'avatar_05',
-  'avatar_06',
-  'avatar_07',
-  'avatar_08',
-  'avatar_09',
-  'avatar_10',
-  'avatar_11',
-  'avatar_12',
 ] as const
 
 export type SelectableAvatarId = (typeof SELECTABLE_AVATAR_IDS)[number]
@@ -28,7 +20,8 @@ export type CharacterCard = {
 }
 
 export function avatarSrc(avatarId: string): string {
-  return `/assets/avatars/${avatarId}.svg`
+  const ext = avatarId === PLACEHOLDER_AVATAR_ID ? 'svg' : 'png'
+  return `/assets/avatars/${avatarId}.${ext}`
 }
 
 export function isSelectableAvatar(id: string): id is SelectableAvatarId {

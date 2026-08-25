@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  avatarSrc,
   isCharacterComplete,
   memberSnapshot,
   PLACEHOLDER_AVATAR_ID,
@@ -12,6 +13,7 @@ describe('character', () => {
     expect(validateCharacter('  ', 'avatar_01').ok).toBe(false)
     expect(validateCharacter('阿强', PLACEHOLDER_AVATAR_ID).ok).toBe(false)
     expect(validateCharacter('阿强', 'avatar_99').ok).toBe(false)
+    expect(validateCharacter('阿强', 'avatar_12').ok).toBe(false)
   })
 
   it('accepts trimmed name and selectable avatar', () => {
@@ -26,5 +28,10 @@ describe('character', () => {
       nickname: UNSET_DISPLAY_NICKNAME,
       avatarId: PLACEHOLDER_AVATAR_ID,
     })
+  })
+
+  it('points selectable faces at png and the empty frame at svg', () => {
+    expect(avatarSrc('avatar_01')).toBe('/assets/avatars/avatar_01.png')
+    expect(avatarSrc(PLACEHOLDER_AVATAR_ID)).toBe('/assets/avatars/avatar_00.svg')
   })
 })

@@ -60,7 +60,7 @@
 
 本机缓存键：`character.card`（JSON，字段与上表展示字段相同）。首页与角色卡页 `onShow`：先画缓存，再 `getCharacter` 覆盖。云写入失败时保留本机副本，下次启动再 `upsertCharacter`；不得为失败路径再生成一个本地身份 id。
 
-**角色卡已设：** `nickname.trim().length >= 1` 且 `avatarId` 为 `avatar_01`–`avatar_12` 之一。`avatar_00` 不算已设。未设时本机可以没有这份缓存；首页人物入口显示空木框。
+**角色卡已设：** `nickname.trim().length >= 1` 且 `avatarId` 为 `avatar_01`–`avatar_04` 之一。`avatar_00` 不算已设。未设时本机可以没有这份缓存；首页人物入口显示空木框。
 
 Mock / 单测：测试注入 `openId`。`USE_MOCK=true` 且无云上下文时，本机用户固定为 `mock-local-user`（仅 mock，不上云）。
 
@@ -138,11 +138,11 @@ nickname: string          // 结算当时座位上的展示名
 
 ## 5. 头像库
 
-- **来源：** Felix Wong **Noto Avatar**（Notion 简笔画脸），[CC0](https://creativecommons.org/publicdomain/zero/1.0/)。预拼组合，不在运行时打开 notion-avatar.app。
-- **数量：** `avatar_00` 占位（空木框 / 未设脸，仅名册「未设角色」与创建者未设时使用）+ **12** 张可选脸 `avatar_01` … `avatar_12`（发型、眼镜、五官组合拉开差异）。
-- **外观：** 正方形；描边 `#26190c`（`--ink` / Dark Wood）；底 `#fff8f4` 或透明（底下是座位 `--panel`）。不要圆形、不要彩色贴纸风。
-- **格式：** 打进 `miniprogram/assets/avatars/` 的 PNG（微信 `<image>` 对 SVG 支持不稳定）。仓库内注明 CC0 来源。
-- **角色卡网格：** 只展示 `avatar_01`–`avatar_12`。保存必须选中其中一张。`avatar_00` 不能当作「已设角色」。
+- **来源：** 用户提供的 Notion 风格简笔画 PNG（黑白线稿、白描边贴纸脸）。不在运行时打开外部头像站。
+- **数量：** `avatar_00` 占位（空木框，未设脸）+ **4** 张可选脸 `avatar_01` … `avatar_04`。
+- **外观：** 正方形木框展示；头像文件本身是黑底白描边。不要圆形。
+- **格式：** 可选脸为 `miniprogram/assets/avatars/*.png`；占位框为 `avatar_00.svg`。
+- **角色卡网格：** 只展示 `avatar_01`–`avatar_04`。保存必须选中其中一张。`avatar_00` 不能当作「已设角色」。
 
 ## 6. 页面
 
@@ -207,7 +207,7 @@ Mock：`sessionApi.ts` 实现同一套行为；多用户测试用显式 `openId`
 | 情况 | 行为 |
 |---|---|
 | 昵称为空或全空白 | 不保存，「请填写牌桌名」 |
-| 未选 `avatar_01`–`12` | 不保存，「请选一个头像」 |
+| 未选 `avatar_01`–`04` | 不保存，「请选一个头像」 |
 | `avatarId` 非法 | 云函数拒绝 |
 | `upsertCharacter` 网络失败 | 本机已编辑的值保留在页面/缓存；toast「保存失败，稍后重试」；不以新 id 顶替 `openId` |
 | 房间不存在 | 现有「房间不存在」 |
