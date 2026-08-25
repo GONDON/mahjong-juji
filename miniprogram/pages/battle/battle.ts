@@ -1,5 +1,6 @@
 // @ts-nocheck
 import type { CycleSettlementRow } from '../../domain/settleCycle'
+import { avatarSrc } from '../../domain/character'
 import type { HuInput } from '../../domain/types'
 import {
   appendHu,
@@ -8,6 +9,7 @@ import {
   liuju,
   settleCycleManual,
   undoLastHu,
+  whoami,
   type SessionDoc,
   type SessionSeat,
 } from '../../services/sessionApi'
@@ -23,7 +25,12 @@ function buildViewSeats(seats: SessionSeat[], dealerId: string) {
     ...s,
     posLabel: POS_LABELS[i] || String(i + 1),
     isDealer: s.playerId === dealerId,
+    faceSrc: avatarSrc(s.avatarId || 'avatar_00'),
   }))
+}
+
+function resolveIsScorer(myOpenId: string, doc: SessionDoc): boolean {
+  return myOpenId === doc.scorerOpenId || myOpenId === doc.scorerId
 }
 
 function canUndoFrom(doc: SessionDoc): boolean {
@@ -48,9 +55,9 @@ Page({
     cycleIndex: 0,
     handIndex: 0,
     seats: [] as ReturnType<typeof buildViewSeats>,
+    members: [] as { openId: string; nickname: string; avatarId?: string; src: string }[],
     canUndo: false,
-    /** Mock default: everyone is scorer. Cloud relies on server gate. */
-    isScorer: true,
+    isScorer: false,
     showHuSheet: false,
     winnerId: '',
     showSettle: false,
@@ -75,8 +82,8 @@ Page({
       return
     }
     try {
-      const doc = await getSession(sessionId)
-      this.applyDoc(doc)
+      const [doc, me] = await Promise.all([getSession(sessionId), whoami()])
+      this.applyDoc(doc, undefined, me.openId)
     } catch (err) {
       console.error(err)
       this.setData({ loading: false })
@@ -84,7 +91,7 @@ Page({
     }
   },
 
-  applyDoc(doc: SessionDoc, settlements?: CycleSettlementRow[]) {
+  applyDoc(doc: SessionDoc, settlements?: CycleSettlementRow[], myOpenId?: string) {
     const dealer = doc.currentCycle?.dealer
     const dealerId = dealer?.dealerId || ''
     const streak = dealer?.streak ?? 0
@@ -97,8 +104,8 @@ Page({
         : undefined)
 
     const nickMap = Object.fromEntries(doc.seats.map((s) => [s.playerId, s.nickname]))
+    const openId = myOpenId || ''
 
-    // Mock default: everyone is scorer. Cloud write gate is server-side (Critical 1).
     this.setData({
       loading: false,
       roomCode: doc.roomCode,
@@ -109,8 +116,12 @@ Page({
       cycleIndex: doc.currentCycle?.index ?? doc.cycles.length,
       handIndex: hand?.index ?? 0,
       seats: buildViewSeats(doc.seats, dealerId),
+      members: (doc.members || []).map((m) => ({
+        ...m,
+        src: avatarSrc(m.avatarId || 'avatar_00'),
+      })),
       canUndo: canUndoFrom(doc),
-      isScorer: true,
+      isScorer: resolveIsScorer(openId, doc),
       showSettle: Boolean(settleRows && settleRows.length),
       settlements: (settleRows || []).map((r) => ({
         ...r,
@@ -155,8 +166,8 @@ Page({
       const result = await appendHu(this.data.sessionId, input)
       this.setData({ showHuSheet: false, winnerId: '', busy: false })
       if (result.cycleOver) {
-        const doc = await getSession(this.data.sessionId)
-        this.applyDoc(doc, result.settlements)
+        const [doc, me] = await Promise.all([getSession(this.data.sessionId), whoami()])
+        this.applyDoc(doc, result.settlements, me.openId)
       } else {
         await this.reload()
       }
@@ -183,8 +194,8 @@ Page({
     this.setData({ busy: true })
     try {
       const settlements = await settleCycleManual(sessionId)
-      const doc = await getSession(sessionId)
-      this.applyDoc(doc, settlements)
+      const [doc, me] = await Promise.all([getSession(sessionId), whoami()])
+      this.applyDoc(doc, settlements, me.openId)
     } catch (err) {
       console.error(err)
       wx.showToast({ title: '结清失败', icon: 'none' })

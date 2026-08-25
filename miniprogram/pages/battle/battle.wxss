@@ -32,6 +32,34 @@
   color: #7a9a7a;
 }
 
+.presence {
+  width: 100%;
+  white-space: nowrap;
+  margin: 0 0 16rpx;
+  height: 64rpx;
+}
+
+.presence-face {
+  display: inline-block;
+  width: 56rpx;
+  height: 56rpx;
+  margin-right: 12rpx;
+  border: 6rpx solid #26190c;
+  border-radius: 8rpx;
+  background: #fff8f4;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.seat-face {
+  width: 72rpx;
+  height: 72rpx;
+  border: 6rpx solid #26190c;
+  border-radius: 8rpx;
+  background: #fff8f4;
+  box-sizing: border-box;
+}
+
 .table {
   flex: 1;
   display: flex;

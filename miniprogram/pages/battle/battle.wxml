@@ -8,11 +8,16 @@
       <text class="topbar-sub">第{{cycleIndex}}轮 · 第{{handIndex}}局 · {{roomCode}}</text>
     </view>
 
+    <scroll-view wx:if="{{members.length}}" class="presence" scroll-x>
+      <image wx:for="{{members}}" wx:key="openId" class="presence-face" src="{{item.src}}" mode="aspectFit" />
+    </scroll-view>
+
     <!-- 四方桌：seats[0]=下 [1]=右 [2]=上 [3]=左 -->
     <view wx:if="{{seats.length === 4}}" class="table">
       <view class="seat seat--top {{seats[2].isDealer ? 'seat--dealer' : ''}} {{seats[2].hasHu ? 'seat--hu' : ''}}"
         data-id="{{seats[2].playerId}}" data-hashu="{{seats[2].hasHu}}" bindtap="selectSeat">
         <text class="seat-pos">上</text>
+        <image class="seat-face" src="{{seats[2].faceSrc}}" mode="aspectFit" />
         <text class="seat-name">{{seats[2].nickname}}</text>
         <text class="seat-chips">{{seats[2].chips}}</text>
         <text wx:if="{{seats[2].hasHu}}" class="seat-hu">已胡</text>
@@ -23,6 +28,7 @@
         <view class="seat seat--side {{seats[3].isDealer ? 'seat--dealer' : ''}} {{seats[3].hasHu ? 'seat--hu' : ''}}"
           data-id="{{seats[3].playerId}}" data-hashu="{{seats[3].hasHu}}" bindtap="selectSeat">
           <text class="seat-pos">左</text>
+          <image class="seat-face" src="{{seats[3].faceSrc}}" mode="aspectFit" />
           <text class="seat-name">{{seats[3].nickname}}</text>
           <text class="seat-chips">{{seats[3].chips}}</text>
           <text wx:if="{{seats[3].hasHu}}" class="seat-hu">已胡</text>
@@ -36,6 +42,7 @@
         <view class="seat seat--side {{seats[1].isDealer ? 'seat--dealer' : ''}} {{seats[1].hasHu ? 'seat--hu' : ''}}"
           data-id="{{seats[1].playerId}}" data-hashu="{{seats[1].hasHu}}" bindtap="selectSeat">
           <text class="seat-pos">右</text>
+          <image class="seat-face" src="{{seats[1].faceSrc}}" mode="aspectFit" />
           <text class="seat-name">{{seats[1].nickname}}</text>
           <text class="seat-chips">{{seats[1].chips}}</text>
           <text wx:if="{{seats[1].hasHu}}" class="seat-hu">已胡</text>
@@ -46,6 +53,7 @@
       <view class="seat seat--bottom {{seats[0].isDealer ? 'seat--dealer' : ''}} {{seats[0].hasHu ? 'seat--hu' : ''}}"
         data-id="{{seats[0].playerId}}" data-hashu="{{seats[0].hasHu}}" bindtap="selectSeat">
         <text class="seat-pos">下</text>
+        <image class="seat-face" src="{{seats[0].faceSrc}}" mode="aspectFit" />
         <text class="seat-name">{{seats[0].nickname}}</text>
         <text class="seat-chips">{{seats[0].chips}}</text>
         <text wx:if="{{seats[0].hasHu}}" class="seat-hu">已胡</text>
