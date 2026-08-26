@@ -1,8 +1,14 @@
 // @ts-nocheck
 import type { CycleSettlementRow } from '../../domain/settleCycle'
 import { avatarSrc } from '../../domain/character'
-import type { HuInput } from '../../domain/types'
 import {
+  sessionFollowDecision,
+  type TablePage,
+} from '../../domain/sessionRoute'
+import type { HuInput } from '../../domain/types'
+import { subscribeSession } from '../../services/sessionLive'
+import {
+  advanceToNextCycle,
   appendHu,
   endSession,
   getSession,
@@ -58,36 +64,85 @@ Page({
     members: [] as { openId: string; nickname: string; avatarId?: string; src: string }[],
     canUndo: false,
     isScorer: false,
+    myOpenId: '',
     showHuSheet: false,
     winnerId: '',
     showSettle: false,
     settlements: [] as (CycleSettlementRow & { nickname: string })[],
   },
 
+  _live: null as { stop: () => void } | null,
+  _page: 'battle' as TablePage,
+  _seq: 0,
+
   onLoad(query: Record<string, string | undefined>) {
     const sessionId = query.sessionId ? decodeURIComponent(query.sessionId) : ''
     this.setData({ sessionId })
   },
 
-  onShow() {
-    if (this.data.sessionId) {
-      this.reload()
+  async onShow() {
+    if (!this.data.sessionId) return
+    try {
+      const me = await whoami()
+      this.setData({ myOpenId: me.openId })
+    } catch (err) {
+      console.error(err)
     }
+    this.startLive()
   },
 
-  async reload() {
+  onHide() {
+    this.stopLive()
+  },
+
+  onUnload() {
+    this.stopLive()
+  },
+
+  startLive() {
+    this.stopLive()
+    const sessionId = this.data.sessionId
+    if (!sessionId) return
+    this._live = subscribeSession({
+      sessionId,
+      page: this._page,
+      onDoc: (doc) => {
+        this.applyDoc(doc, undefined, this.data.myOpenId)
+      },
+      onNavigate: (url) => {
+        wx.redirectTo({ url })
+      },
+      onFirstError: () => {
+        this.setData({ loading: false })
+        wx.showToast({ title: '加载失败', icon: 'none' })
+      },
+    })
+  },
+
+  stopLive() {
+    this._live?.stop()
+    this._live = null
+  },
+
+  async reload(opts?: { silent?: boolean }) {
     const { sessionId } = this.data
     if (!sessionId) {
       this.setData({ loading: false })
       return
     }
+    if (opts?.silent && this.data.busy) return
+    const seq = ++this._seq
     try {
       const [doc, me] = await Promise.all([getSession(sessionId), whoami()])
+      if (seq !== this._seq) return
+      if (opts?.silent && this.data.busy) return
       this.applyDoc(doc, undefined, me.openId)
     } catch (err) {
       console.error(err)
       this.setData({ loading: false })
-      wx.showToast({ title: '加载失败', icon: 'none' })
+      if (!opts?.silent) {
+        wx.showToast({ title: '加载失败', icon: 'none' })
+      }
     }
   },
 
@@ -104,7 +159,7 @@ Page({
         : undefined)
 
     const nickMap = Object.fromEntries(doc.seats.map((s) => [s.playerId, s.nickname]))
-    const openId = myOpenId || ''
+    const openId = myOpenId || this.data.myOpenId || ''
 
     this.setData({
       loading: false,
@@ -122,6 +177,7 @@ Page({
       })),
       canUndo: canUndoFrom(doc),
       isScorer: resolveIsScorer(openId, doc),
+      myOpenId: openId,
       showSettle: Boolean(settleRows && settleRows.length),
       settlements: (settleRows || []).map((r) => ({
         ...r,
@@ -167,6 +223,7 @@ Page({
       this.setData({ showHuSheet: false, winnerId: '', busy: false })
       if (result.cycleOver) {
         const [doc, me] = await Promise.all([getSession(this.data.sessionId), whoami()])
+        this._seq += 1
         this.applyDoc(doc, result.settlements, me.openId)
       } else {
         await this.reload()
@@ -195,6 +252,7 @@ Page({
     try {
       const settlements = await settleCycleManual(sessionId)
       const [doc, me] = await Promise.all([getSession(sessionId), whoami()])
+      this._seq += 1
       this.applyDoc(doc, settlements, me.openId)
     } catch (err) {
       console.error(err)
@@ -253,19 +311,28 @@ Page({
     })
   },
 
-  onNextCycle() {
-    const { sessionId } = this.data
-    wx.redirectTo({
-      url: `/pages/dealer-pick/dealer-pick?sessionId=${encodeURIComponent(sessionId)}`,
-    })
+  async onNextCycle() {
+    if (!this.data.isScorer || this.data.busy) return
+    this.setData({ busy: true })
+    try {
+      await advanceToNextCycle(this.data.sessionId)
+      const next = sessionFollowDecision(this._page, 'open', this.data.sessionId)
+      if (next.action === 'redirect') wx.redirectTo({ url: next.url })
+    } catch (err) {
+      console.error(err)
+      wx.showToast({ title: '开下一轮失败', icon: 'none' })
+    } finally {
+      this.setData({ busy: false })
+    }
   },
 
   async onEndSession() {
-    if (this.data.busy) return
+    if (!this.data.isScorer || this.data.busy) return
     this.setData({ busy: true })
     try {
       await endSession(this.data.sessionId)
-      wx.reLaunch({ url: '/pages/index/index' })
+      const next = sessionFollowDecision(this._page, 'ended', this.data.sessionId)
+      if (next.action === 'redirect') wx.redirectTo({ url: next.url })
     } catch (err) {
       console.error(err)
       this.setData({ busy: false })

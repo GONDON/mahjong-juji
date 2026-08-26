@@ -7,8 +7,12 @@ import {
 } from '../../domain/character'
 import { canMutateSeats } from '../../domain/presence'
 import {
+  sessionFollowDecision,
+  type TablePage,
+} from '../../domain/sessionRoute'
+import { subscribeSession } from '../../services/sessionLive'
+import {
   claimSeat,
-  getSession,
   scorerRenameSeat,
   scorerUnclaimSeat,
   startCycle,
@@ -87,6 +91,9 @@ Page({
     isScorer: false,
   },
 
+  _live: null as { stop: () => void } | null,
+  _page: 'dealer-pick' as TablePage,
+
   async onLoad(query: Record<string, string | undefined>) {
     const sessionId = query.sessionId ? decodeURIComponent(query.sessionId) : ''
     if (!sessionId) {
@@ -95,25 +102,50 @@ Page({
       return
     }
     this.setData({ sessionId })
-    await this.refreshSession()
   },
 
   async onShow() {
     if (!this.data.sessionId) return
-    await this.refreshSession()
-  },
-
-  async refreshSession() {
-    const { sessionId } = this.data
-    if (!sessionId) return
     try {
-      const [doc, me] = await Promise.all([getSession(sessionId), whoami()])
-      this.applyDoc(doc, me.openId)
+      const me = await whoami()
+      this.setData({ myOpenId: me.openId })
     } catch (err) {
       console.error(err)
-      this.setData({ loading: false })
-      wx.showToast({ title: '加载失败', icon: 'none' })
     }
+    this.startLive()
+  },
+
+  onHide() {
+    this.stopLive()
+  },
+
+  onUnload() {
+    this.stopLive()
+  },
+
+  startLive() {
+    this.stopLive()
+    const sessionId = this.data.sessionId
+    if (!sessionId) return
+    this._live = subscribeSession({
+      sessionId,
+      page: this._page,
+      onDoc: (doc) => {
+        this.applyDoc(doc, this.data.myOpenId)
+      },
+      onNavigate: (url) => {
+        wx.redirectTo({ url })
+      },
+      onFirstError: () => {
+        this.setData({ loading: false })
+        wx.showToast({ title: '加载失败', icon: 'none' })
+      },
+    })
+  },
+
+  stopLive() {
+    this._live?.stop()
+    this._live = null
   },
 
   applyDoc(doc: SessionDoc, myOpenId: string) {
@@ -260,9 +292,10 @@ Page({
     this.setData({ confirming: true })
     try {
       await startCycle(sessionId, selectedId)
-      wx.redirectTo({
-        url: `/pages/battle/battle?sessionId=${encodeURIComponent(sessionId)}`,
-      })
+      const next = sessionFollowDecision(this._page, 'playing', sessionId)
+      if (next.action === 'redirect') {
+        wx.redirectTo({ url: next.url })
+      }
     } catch (err) {
       console.error(err)
       wx.showToast({ title: '开局失败', icon: 'none' })

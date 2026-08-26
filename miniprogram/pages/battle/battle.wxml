@@ -94,8 +94,11 @@
           <text class="settle-yuan {{item.yuan >= 0 ? 'up' : 'down'}}">{{item.yuan >= 0 ? '+' : ''}}{{item.yuan}} 元</text>
         </view>
       </view>
-      <button class="confirm-btn" bindtap="onNextCycle">再开一轮</button>
-      <button class="bar-btn bar-btn--ghost end-btn" bindtap="onEndSession">结束牌局</button>
+      <block wx:if="{{isScorer}}">
+        <button class="confirm-btn" bindtap="onNextCycle">再开一轮</button>
+        <button class="bar-btn bar-btn--ghost end-btn" bindtap="onEndSession">结束牌局</button>
+      </block>
+      <text wx:else class="hint">等待记分员再开一轮或结束牌局</text>
     </view>
   </view>
 </view>

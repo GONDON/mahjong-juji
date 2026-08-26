@@ -1,10 +1,11 @@
 // @ts-nocheck
 import {
   endSession,
-  getSession,
   type SessionDoc,
   type SessionStatus,
 } from '../../services/sessionApi'
+import { subscribeSession } from '../../services/sessionLive'
+import type { TablePage } from '../../domain/sessionRoute'
 import type { BasicFan } from '../../domain/types'
 
 const BASIC_FAN_LABEL: Record<BasicFan, string> = {
@@ -80,38 +81,70 @@ Page({
     busy: false,
   },
 
+  _live: null as { stop: () => void } | null,
+  _page: 'session' as TablePage,
+
   onLoad(query: Record<string, string | undefined>) {
     const sessionId = query.sessionId ? decodeURIComponent(query.sessionId) : ''
     this.setData({ sessionId })
   },
 
-  async onShow() {
-    await this.reload()
+  onShow() {
+    this.startLive()
   },
 
-  async reload() {
-    const { sessionId } = this.data
+  onHide() {
+    this.stopLive()
+  },
+
+  onUnload() {
+    this.stopLive()
+  },
+
+  startLive() {
+    this.stopLive()
+    const sessionId = this.data.sessionId
     if (!sessionId) {
       this.setData({ loading: false })
       return
     }
-    try {
-      const doc = await getSession(sessionId)
-      const canEnd = doc.status !== 'ended' && !doc.currentCycle
-      this.setData({
-        roomCode: doc.roomCode,
-        chipValueYuan: doc.chipValueYuan,
-        status: doc.status,
-        statusLabel: STATUS_LABEL[doc.status] || doc.status,
-        cycles: buildCycles(doc),
-        canEnd,
-        loading: false,
-      })
-    } catch (err) {
-      console.error(err)
-      this.setData({ loading: false })
-      wx.showToast({ title: '加载失败', icon: 'none' })
-    }
+    this._live = subscribeSession({
+      sessionId,
+      page: this._page,
+      onDoc: (doc) => this.applyDoc(doc),
+      onNavigate: () => {
+        // Session detail never follows away from this page.
+      },
+      onFirstError: () => {
+        this.setData({ loading: false })
+        wx.showToast({ title: '加载失败', icon: 'none' })
+      },
+    })
+  },
+
+  stopLive() {
+    this._live?.stop()
+    this._live = null
+  },
+
+  applyDoc(doc: SessionDoc) {
+    const expanded = new Set(
+      this.data.cycles.filter((c) => c.expanded).map((c) => c.index),
+    )
+    const cycles = buildCycles(doc).map((c) => ({
+      ...c,
+      expanded: expanded.has(c.index),
+    }))
+    const canEnd = doc.status !== 'ended' && !doc.currentCycle
+    this.setData({
+      roomCode: doc.roomCode,
+      chipValueYuan: doc.chipValueYuan,
+      status: doc.status,
+      statusLabel: STATUS_LABEL[doc.status] || doc.status,
+      cycles,
+      canEnd,
+      loading: false,
+    })
   },
 
   onToggleCycle(e: WechatMiniprogram.TouchEvent) {
@@ -132,11 +165,12 @@ Page({
     this.setData({ busy: true })
     try {
       await endSession(this.data.sessionId)
-      wx.reLaunch({ url: '/pages/index/index' })
     } catch (err) {
       console.error(err)
       this.setData({ busy: false })
       wx.showToast({ title: '结束失败', icon: 'none' })
+      return
     }
+    this.setData({ busy: false })
   },
 })
