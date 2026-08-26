@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { createSession } from '../../services/sessionApi'
 
-const CHIP_OPTIONS = [1, 2, 5]
+const CHIP_OPTIONS = [1, 2, 3, 4, 5]
 
 Page({
   data: {

@@ -6,6 +6,7 @@ import {
   preferLocalCharacter,
   type CharacterCard,
 } from '../../domain/character'
+import { tablePathFor } from '../../domain/sessionRoute'
 import {
   createSession,
   enterSession,
@@ -20,12 +21,16 @@ import {
   DEFAULT_SEAT_NICKNAMES,
   RECENT_STORAGE_KEY,
   canSubmitJoin,
-  joinCodeCells,
+  clampRecentSwipe,
   normalizeJoinCode,
   parseStoredCampaigns,
+  presentJoinField,
   presentRecentCampaign,
+  removeRecentCampaign,
   selectChipValue,
+  sessionDetailRoute,
   sessionRoute,
+  snapRecentSwipe,
   upsertRecentCampaign,
   type RecentCampaign,
 } from './indexState'
@@ -43,10 +48,6 @@ function writeLocalCard(card: CharacterCard) {
   wx.setStorageSync(CHARACTER_STORAGE_KEY, card)
 }
 
-function cellViews(code: string) {
-  return joinCodeCells(code).map((ch, slot) => ({ slot, ch }))
-}
-
 function campaignFromDoc(doc: SessionDoc): RecentCampaign {
   return {
     sessionId: doc.sessionId,
@@ -61,18 +62,31 @@ Page({
   data: {
     chipOptions: CHIP_OPTIONS,
     chipValueYuan: 1,
-    joinCode: '',
-    joinCells: cellViews(''),
-    canJoin: false,
+    ...presentJoinField(''),
+    joinEpoch: 0,
     joining: false,
     creating: false,
     campaigns: [] as RecentCampaign[],
-    recents: [] as ReturnType<typeof presentRecentCampaign>[],
+    recents: [] as Array<
+      ReturnType<typeof presentRecentCampaign> & { offsetX: number }
+    >,
     hasProfile: false,
     profileSrc: '',
+    lockingScroll: false,
   },
 
+  _offsets: {} as Record<string, number>,
+  _swipe: null as null | {
+    id: string
+    startX: number
+    startY: number
+    startOffset: number
+    tracking: boolean | null
+  },
+  _ignoreTap: false,
+
   onShow() {
+    this._offsets = this._offsets || {}
     this.refreshProfile()
     this.refreshRecents()
   },
@@ -85,13 +99,18 @@ Page({
     this.setData({ chipValueYuan: next })
   },
 
+  onJoinCodeFocus() {
+    this.setData(presentJoinField(this.data.joinCode, true))
+  },
+
+  onJoinCodeBlur() {
+    this.setData(presentJoinField(this.data.joinCode, false))
+  },
+
   onJoinCodeInput(e: WechatMiniprogram.Input) {
     const joinCode = normalizeJoinCode(String(e.detail.value ?? ''))
-    this.setData({
-      joinCode,
-      joinCells: cellViews(joinCode),
-      canJoin: canSubmitJoin(joinCode),
-    })
+    this.setData(presentJoinField(joinCode, true))
+    return { value: joinCode, cursor: joinCode.length }
   },
 
   async onCreateTap() {
@@ -154,19 +173,13 @@ Page({
         return
       }
       this.remember(campaignFromDoc(doc))
-      if (doc.status === 'playing' && doc.currentCycle) {
-        wx.navigateTo({
-          url: `/pages/battle/battle?sessionId=${encodeURIComponent(doc.sessionId)}`,
-        })
-      } else if (doc.status === 'open' || doc.status === 'settling') {
-        wx.navigateTo({
-          url: `/pages/dealer-pick/dealer-pick?sessionId=${encodeURIComponent(doc.sessionId)}`,
-        })
-      } else {
-        wx.navigateTo({
-          url: `/pages/session/session?sessionId=${encodeURIComponent(doc.sessionId)}`,
-        })
-      }
+      this.setData({
+        ...presentJoinField(''),
+        joinEpoch: this.data.joinEpoch + 1,
+      })
+      wx.navigateTo({
+        url: tablePathFor(doc.status, doc.sessionId),
+      })
     } catch (err) {
       console.error(err)
       wx.showToast({ title: '加入失败', icon: 'none' })
@@ -175,13 +188,104 @@ Page({
     }
   },
 
-  onRecentTap(e: WechatMiniprogram.TouchEvent) {
-    const sessionId = String(e.currentTarget.dataset.id || '')
-    const campaign = this.data.campaigns.find(
+  findCampaign(sessionId: string): RecentCampaign | undefined {
+    return this.data.campaigns.find(
       (item: RecentCampaign) => item.sessionId === sessionId,
     )
+  },
+
+  onRecentTap(e: WechatMiniprogram.TouchEvent) {
+    if (this._ignoreTap) {
+      this._ignoreTap = false
+      return
+    }
+    const sessionId = String(e.currentTarget.dataset.id || '')
+    if ((this._offsets[sessionId] || 0) !== 0) {
+      this.setSwipeOffset(sessionId, 0)
+      return
+    }
+    const campaign = this.findCampaign(sessionId)
+    if (!campaign) return
+    wx.navigateTo({ url: sessionDetailRoute(campaign) })
+  },
+
+  onReenterTap(e: WechatMiniprogram.TouchEvent) {
+    if (this._ignoreTap) {
+      this._ignoreTap = false
+      return
+    }
+    const sessionId = String(e.currentTarget.dataset.id || '')
+    const campaign = this.findCampaign(sessionId)
     if (!campaign) return
     wx.navigateTo({ url: sessionRoute(campaign) })
+  },
+
+  onRecentDelete(e: WechatMiniprogram.TouchEvent) {
+    const sessionId = String(e.currentTarget.dataset.id || '')
+    const campaigns = removeRecentCampaign(this.data.campaigns, sessionId)
+    delete this._offsets[sessionId]
+    try {
+      wx.setStorageSync(RECENT_STORAGE_KEY, campaigns)
+    } catch (err) {
+      console.error(err)
+    }
+    this.paintRecents(campaigns)
+  },
+
+  onRecentTouchStart(e: WechatMiniprogram.TouchEvent) {
+    const t = e.changedTouches[0]
+    const id = String(e.currentTarget.dataset.id || '')
+    const openId = Object.keys(this._offsets).find(
+      (key) => key !== id && (this._offsets[key] || 0) !== 0,
+    )
+    if (openId) this.setSwipeOffset(openId, 0)
+    this._swipe = {
+      id,
+      startX: t.clientX,
+      startY: t.clientY,
+      startOffset: this._offsets[id] || 0,
+      tracking: null,
+    }
+  },
+
+  onRecentTouchMove(e: WechatMiniprogram.TouchEvent) {
+    const swipe = this._swipe
+    if (!swipe) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - swipe.startX
+    const dy = t.clientY - swipe.startY
+    if (swipe.tracking === null) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+      swipe.tracking = Math.abs(dx) > Math.abs(dy)
+      if (swipe.tracking) this.setData({ lockingScroll: true })
+    }
+    if (!swipe.tracking) return
+    this.setSwipeOffset(swipe.id, clampRecentSwipe(swipe.startOffset + dx))
+  },
+
+  onRecentTouchEnd() {
+    const swipe = this._swipe
+    this._swipe = null
+    if (this.data.lockingScroll) this.setData({ lockingScroll: false })
+    if (!swipe || !swipe.tracking) return
+    this._ignoreTap = true
+    this.setSwipeOffset(swipe.id, snapRecentSwipe(this._offsets[swipe.id] || 0))
+    setTimeout(() => {
+      this._ignoreTap = false
+    }, 80)
+  },
+
+  setSwipeOffset(sessionId: string, offsetX: number) {
+    const offsets: Record<string, number> = { [sessionId]: offsetX }
+    this._offsets = offsets
+    this.setData({
+      recents: this.data.recents.map(
+        (item: { sessionId: string; offsetX: number }) => ({
+          ...item,
+          offsetX: item.sessionId === sessionId ? offsetX : 0,
+        }),
+      ),
+    })
   },
 
   onRankTap() {
@@ -271,9 +375,10 @@ Page({
     const now = Date.now()
     this.setData({
       campaigns,
-      recents: campaigns.map((item) =>
-        presentRecentCampaign(item, now),
-      ),
+      recents: campaigns.map((item) => ({
+        ...presentRecentCampaign(item, now),
+        offsetX: this._offsets[item.sessionId] || 0,
+      })),
     })
   },
 })

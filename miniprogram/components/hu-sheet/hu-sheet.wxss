@@ -176,15 +176,21 @@
 
 .confirm {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   height: 96rpx;
-  line-height: 96rpx;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   font-size: 32rpx;
   font-weight: 700;
+  line-height: 1;
   color: var(--on-fill);
   background: var(--ink);
   border-radius: var(--radius-pill);
   border: var(--stroke) solid var(--ink);
-  margin: 0;
 }
 
 .confirm::after {

@@ -19,15 +19,16 @@
 
 .chip-row {
   display: flex;
-  gap: 24rpx;
+  gap: 12rpx;
 }
 
 .chip-btn {
   flex: 1;
   height: 96rpx;
+  padding: 0 4rpx;
   line-height: 88rpx;
   text-align: center;
-  font-size: 34rpx;
+  font-size: 24rpx;
   font-weight: 700;
   color: var(--ink);
   background: var(--panel);

@@ -158,10 +158,17 @@
 }
 
 .confirm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   height: 100rpx;
-  line-height: 100rpx;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   font-size: 34rpx;
   font-weight: 700;
+  line-height: 1;
   color: var(--on-fill);
   background: var(--ink);
   border-radius: var(--radius-pill);

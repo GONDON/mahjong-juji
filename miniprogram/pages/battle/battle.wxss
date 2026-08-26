@@ -173,16 +173,20 @@
 .bar-btn {
   flex: 1;
   min-width: 30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 88rpx;
-  line-height: 88rpx;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
   font-size: 26rpx;
   font-weight: 700;
+  line-height: 1;
   color: var(--ink);
   background: var(--panel);
   border-radius: var(--radius-pill);
   border: var(--stroke-thin) solid var(--ink);
-  padding: 0;
-  margin: 0;
 }
 
 .bar-btn::after {
@@ -205,7 +209,8 @@
   bottom: 0;
   background: var(--mask);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
   z-index: 100;
 }
 
@@ -219,10 +224,8 @@
 }
 
 .settle-sheet {
-  align-self: center;
   width: 86%;
   border-radius: var(--radius-tile);
-  margin-bottom: 80rpx;
   border: var(--stroke) solid var(--ink);
 }
 
@@ -233,15 +236,21 @@
 }
 
 .confirm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   height: 96rpx;
-  line-height: 96rpx;
+  margin-top: 8rpx;
+  padding: 0;
+  box-sizing: border-box;
   font-size: 32rpx;
   font-weight: 700;
+  line-height: 1;
   color: var(--on-fill);
   background: var(--ink);
   border-radius: var(--radius-pill);
   border: var(--stroke) solid var(--ink);
-  margin-top: 8rpx;
 }
 
 .confirm-btn::after {

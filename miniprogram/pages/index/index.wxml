@@ -1,5 +1,6 @@
 <view class="page">
-  <scroll-view class="body" scroll-y>
+  <scroll-view class="body" scroll-y="{{!lockingScroll}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+    <view class="body-clip">
     <view class="identity">
       <view class="profile face-frame" hover-class="profile--pressed" bindtap="onProfileTap">
         <image
@@ -57,19 +58,25 @@
         <view
           wx:for="{{joinCells}}"
           wx:key="slot"
-          class="code-cell {{item.ch ? 'code-cell--on' : ''}}"
+          class="code-cell {{item.ch ? 'code-cell--on' : ''}} {{item.caret ? 'code-cell--caret' : ''}}"
         >
-          <text>{{item.ch || '-'}}</text>
+          <text wx:if="{{item.ch}}">{{item.ch}}</text>
+          <view wx:if="{{item.caret}}" class="code-caret"></view>
+          <text wx:elif="{{!item.ch}}">-</text>
         </view>
-        <input
-          class="code-ghost"
-          maxlength="4"
-          value="{{joinCode}}"
-          hold-keyboard
-          confirm-type="done"
-          bindinput="onJoinCodeInput"
-          bindconfirm="onJoinTap"
-        />
+        <block wx:for="{{[joinEpoch]}}" wx:key="*this">
+          <input
+            class="code-ghost"
+            maxlength="4"
+            value="{{joinCode}}"
+            hold-keyboard
+            confirm-type="done"
+            bindfocus="onJoinCodeFocus"
+            bindblur="onJoinCodeBlur"
+            bindinput="onJoinCodeInput"
+            bindconfirm="onJoinTap"
+          />
+        </block>
       </view>
 
       <button
@@ -97,28 +104,46 @@
       <view
         wx:for="{{recents}}"
         wx:key="sessionId"
-        class="campaign {{item.active ? '' : 'campaign--done'}}"
-        data-id="{{item.sessionId}}"
-        bindtap="onRecentTap"
+        class="swipe"
       >
-        <image
-          class="campaign-mark"
-          src="{{item.active ? '/assets/ico-table.svg' : '/assets/ico-scroll.svg'}}"
-          mode="aspectFit"
-        />
-        <view class="campaign-copy">
-          <text class="campaign-title">{{item.title}}</text>
-          <text class="campaign-meta">{{item.meta}}</text>
+        <view class="swipe-under">
+          <view
+            class="swipe-delete"
+            hover-class="swipe-delete--pressed"
+            data-id="{{item.sessionId}}"
+            catchtap="onRecentDelete"
+          >删除</view>
         </view>
         <view
-          wx:if="{{item.active}}"
-          class="reenter"
-          hover-class="reenter--pressed"
+          class="campaign {{item.active ? '' : 'campaign--done'}}"
+          style="transform: translateX({{item.offsetX}}px);"
           data-id="{{item.sessionId}}"
-          catchtap="onRecentTap"
-        >再入局</view>
-        <text wx:else class="finished">已结束</text>
+          bindtouchstart="onRecentTouchStart"
+          bindtouchmove="onRecentTouchMove"
+          bindtouchend="onRecentTouchEnd"
+          bindtouchcancel="onRecentTouchEnd"
+          bindtap="onRecentTap"
+        >
+          <image
+            class="campaign-mark"
+            src="{{item.active ? '/assets/ico-table.svg' : '/assets/ico-scroll.svg'}}"
+            mode="aspectFit"
+          />
+          <view class="campaign-copy">
+            <text class="campaign-title">{{item.title}}</text>
+            <text class="campaign-meta">{{item.meta}}</text>
+          </view>
+          <view
+            wx:if="{{item.active}}"
+            class="reenter"
+            hover-class="reenter--pressed"
+            data-id="{{item.sessionId}}"
+            catchtap="onReenterTap"
+          >再入局</view>
+          <text wx:else class="finished">已结束</text>
+        </view>
       </view>
+    </view>
     </view>
   </scroll-view>
 </view>

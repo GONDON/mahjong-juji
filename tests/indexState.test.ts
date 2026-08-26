@@ -1,14 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CHIP_OPTIONS,
   DEFAULT_SEAT_NICKNAMES,
+  RECENT_DELETE_WIDTH,
   canSubmitJoin,
+  clampRecentSwipe,
   formatEndedAgo,
   joinCodeCells,
+  joinCodeCaretSlot,
   normalizeJoinCode,
   parseStoredCampaigns,
+  presentJoinField,
   presentRecentCampaign,
+  removeRecentCampaign,
   selectChipValue,
+  sessionDetailRoute,
   sessionRoute,
+  snapRecentSwipe,
   upsertRecentCampaign,
   type RecentCampaign,
 } from '../miniprogram/pages/index/indexState'
@@ -30,10 +38,17 @@ const ended: RecentCampaign = {
 }
 
 describe('lobby chip value', () => {
-  it('accepts 1, 2, or 5 and keeps the current value otherwise', () => {
+  it('offers 1 through 5', () => {
+    expect(CHIP_OPTIONS).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('accepts 1-5 and keeps the current value otherwise', () => {
     expect(selectChipValue(1, 2)).toBe(1)
+    expect(selectChipValue(3, 2)).toBe(3)
+    expect(selectChipValue(4, 2)).toBe(4)
     expect(selectChipValue(5, 2)).toBe(5)
-    expect(selectChipValue(4, 2)).toBe(2)
+    expect(selectChipValue(6, 2)).toBe(2)
+    expect(selectChipValue(0, 2)).toBe(2)
   })
 })
 
@@ -52,6 +67,41 @@ describe('lobby join code', () => {
     expect(canSubmitJoin('8K2')).toBe(false)
     expect(canSubmitJoin('8K2P')).toBe(true)
   })
+
+  it('puts the caret on the next empty slot, last slot when full', () => {
+    expect(joinCodeCaretSlot('')).toBe(0)
+    expect(joinCodeCaretSlot('8')).toBe(1)
+    expect(joinCodeCaretSlot('8K2')).toBe(3)
+    expect(joinCodeCaretSlot('8K2P')).toBe(3)
+  })
+
+  it('walks the simulated caret through each box, including the fourth when full', () => {
+    const carets = (code: string) =>
+      presentJoinField(code, true).joinCells.map((cell) => cell.caret)
+
+    expect(carets('')).toEqual([true, false, false, false])
+    expect(carets('8')).toEqual([false, true, false, false])
+    expect(carets('8K')).toEqual([false, false, true, false])
+    expect(carets('8K2')).toEqual([false, false, false, true])
+    expect(carets('8K2P')).toEqual([false, false, false, true])
+    expect(
+      presentJoinField('8K2P', false).joinCells.every((cell) => !cell.caret),
+    ).toBe(true)
+  })
+
+  it('clears the join field to an empty unfocused state', () => {
+    expect(presentJoinField('KKVZ')).not.toEqual(presentJoinField(''))
+    expect(presentJoinField('')).toEqual({
+      joinCode: '',
+      canJoin: false,
+      joinCells: [
+        { slot: 0, ch: '', caret: false },
+        { slot: 1, ch: '', caret: false },
+        { slot: 2, ch: '', caret: false },
+        { slot: 3, ch: '', caret: false },
+      ],
+    })
+  })
 })
 
 describe('lobby recent campaigns', () => {
@@ -64,6 +114,14 @@ describe('lobby recent campaigns', () => {
     const list = upsertRecentCampaign([ended, playing], next)
     expect(list.map((c) => c.sessionId)).toEqual(['sess_1', 'sess_2'])
     expect(list[0].chipValueYuan).toBe(5)
+  })
+
+  it('removes a campaign by session id', () => {
+    expect(removeRecentCampaign([playing, ended], 'sess_1')).toEqual([ended])
+    expect(removeRecentCampaign([playing, ended], 'missing')).toEqual([
+      playing,
+      ended,
+    ])
   })
 
   it('presents active and finished rows for the lobby list', () => {
@@ -87,6 +145,34 @@ describe('lobby recent campaigns', () => {
       '/pages/dealer-pick/dealer-pick?sessionId=sess_1',
     )
     expect(sessionRoute(ended)).toBe('/pages/session/session?sessionId=sess_2')
+    expect(sessionRoute({ ...playing, status: 'settling' })).toBe(
+      '/pages/battle/battle?sessionId=sess_1',
+    )
+  })
+
+  it('routes a row tap to session detail', () => {
+    expect(sessionDetailRoute(playing)).toBe(
+      '/pages/session/session?sessionId=sess_1',
+    )
+    expect(sessionDetailRoute(ended)).toBe(
+      '/pages/session/session?sessionId=sess_2',
+    )
+  })
+})
+
+describe('recent swipe', () => {
+  it('clamps left to the delete width and ignores a right swipe', () => {
+    expect(clampRecentSwipe(40)).toBe(0)
+    expect(clampRecentSwipe(-40)).toBe(-40)
+    expect(clampRecentSwipe(-200)).toBe(-RECENT_DELETE_WIDTH)
+  })
+
+  it('snaps open past halfway, otherwise closed', () => {
+    expect(snapRecentSwipe(-20)).toBe(0)
+    expect(snapRecentSwipe(-RECENT_DELETE_WIDTH / 2 - 1)).toBe(
+      -RECENT_DELETE_WIDTH,
+    )
+    expect(snapRecentSwipe(-RECENT_DELETE_WIDTH)).toBe(-RECENT_DELETE_WIDTH)
   })
 })
 

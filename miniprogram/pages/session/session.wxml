@@ -2,9 +2,11 @@
   <view wx:if="{{loading}}" class="hint">加载中…</view>
   <block wx:else>
     <view class="header">
-      <text class="title">牌局详情</text>
-      <text class="meta">房间码 {{roomCode}}</text>
-      <text class="meta">面值 {{chipValueYuan}} 元/牌  {{statusLabel}}</text>
+      <view class="header-row">
+        <text class="room">{{roomCode}}</text>
+        <text class="status">{{statusLabel}}</text>
+      </view>
+      <text class="meta">面值 {{chipValueYuan}} 元/牌</text>
     </view>
 
     <view wx:if="{{cycles.length === 0}}" class="empty-state">
@@ -19,11 +21,12 @@
     >
       <view
         class="cycle-head"
+        hover-class="cycle-head--pressed"
         data-index="{{item.index}}"
         bindtap="onToggleCycle"
       >
         <text class="cycle-title">第 {{item.index}} 轮</text>
-        <text class="cycle-toggle">{{item.expanded ? '收起' : '展开流水'}}</text>
+        <text class="cycle-toggle">{{item.expanded ? '收起' : '流水'}}</text>
       </view>
 
       <view class="settle-list">
@@ -33,15 +36,16 @@
           wx:key="playerId"
           class="settle-row"
         >
+          <view class="settle-face face-frame">
+            <image class="settle-face-img" src="{{row.faceSrc}}" mode="aspectFit" />
+          </view>
           <text class="settle-name">{{row.nickname}}</text>
-          <text class="settle-delta">牌 {{row.chipDelta >= 0 ? '+' : ''}}{{row.chipDelta}}</text>
-          <text class="settle-yuan {{row.yuan >= 0 ? 'up' : 'down'}}">
-            {{row.yuan >= 0 ? '+' : ''}}{{row.yuan}} 元
-          </text>
+          <text class="settle-delta">{{row.chipLabel}}</text>
+          <text class="settle-yuan {{row.yuanClass}}">{{row.yuanLabel}}</text>
         </view>
       </view>
 
-      <view wx:if="{{item.expanded}}" class="hands">
+      <view wx:if="{{item.expanded}}" class="ledger">
         <view wx:if="{{item.hands.length === 0}}" class="empty-sm">本轮无局记录</view>
         <view
           wx:for="{{item.hands}}"
@@ -50,7 +54,7 @@
           class="hand"
         >
           <text class="hand-title">
-            第 {{hand.index}} 局  庄 {{hand.dealer}}（连{{hand.streak}}）
+            {{hand.title}}
             <text wx:if="{{hand.liuju}}">  流局</text>
           </text>
           <view wx:if="{{hand.hus.length === 0 && !hand.liuju}}" class="empty-sm">无胡</view>
@@ -61,8 +65,8 @@
             wx:key="huIdx"
             class="hu-row"
           >
-            <text class="hu-main">{{hu.winner}} {{hu.winType}} {{hu.fan}}</text>
-            <text class="hu-pay">每人付 {{hu.perPayer}} 牌</text>
+            <text class="hu-main">{{hu.line}}</text>
+            <text class="hu-pay">{{hu.payLabel}}</text>
           </view>
         </view>
       </view>
@@ -70,9 +74,11 @@
 
     <button
       wx:if="{{canEnd}}"
-      class="end-btn"
+      class="btn-ink end-btn"
+      hover-class="btn-ink--pressed"
       bindtap="onEndSession"
       disabled="{{busy}}"
+      loading="{{busy}}"
     >结束牌局</button>
   </block>
 </view>

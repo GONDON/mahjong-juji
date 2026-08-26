@@ -1,16 +1,17 @@
 /**
  * Local / WeChat cloud toggles.
  *
- * Replace CLOUD_ENV_ID with the env id from WeChat DevTools → 云开发.
- * Keep USE_MOCK=true for npm tests and offline UI; set false after deploying
- * cloudfunctions/sessionWrite (see docs/cloud-setup.md).
+ * CLOUD_ENV_ID is the env from WeChat DevTools → 云开发 (cloud1).
+ * Node tests have no `wx`, so USE_MOCK stays true for `npm test`.
+ * DevTools / device have `wx`, so the miniprogram calls sessionWrite.
+ * See docs/cloud-setup.md.
  */
 
-/** WeChat cloud environment id. Replace YOUR_ENV_ID before USE_MOCK=false. */
-export const CLOUD_ENV_ID = 'YOUR_ENV_ID'
+/** WeChat cloud environment id. */
+export const CLOUD_ENV_ID = 'cloud1-d4g7zfv1x770ba8fe'
 
 /**
- * When true (default), sessionApi uses the in-memory mock store.
- * When false, all reads/writes go through wx.cloud.callFunction('sessionWrite').
+ * When true, sessionApi uses the in-memory mock store.
+ * Forced on in Node (vitest). False in WeChat so two devices can share a room.
  */
-export const USE_MOCK = true
+export const USE_MOCK = typeof wx === 'undefined'

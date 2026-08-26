@@ -2,71 +2,13 @@
 import {
   endSession,
   type SessionDoc,
-  type SessionStatus,
 } from '../../services/sessionApi'
 import { subscribeSession } from '../../services/sessionLive'
 import type { TablePage } from '../../domain/sessionRoute'
-import type { BasicFan } from '../../domain/types'
-
-const BASIC_FAN_LABEL: Record<BasicFan, string> = {
-  pinghu: '平胡',
-  duidui: '对对胡',
-  qingyise: '清一色',
-  qidui: '七对',
-  jingougou: '金钩钩',
-  qingdui: '清对',
-  qingqidui: '清七对',
-  qingjingougou: '清金钩钩',
-}
-
-const STATUS_LABEL: Record<SessionStatus, string> = {
-  open: '未开局',
-  playing: '进行中',
-  settling: '待结算/可续轮',
-  ended: '已结束',
-}
-
-function nickMap(doc: SessionDoc): Record<string, string> {
-  const m: Record<string, string> = {}
-  for (const s of doc.seats) m[s.playerId] = s.nickname
-  return m
-}
-
-function buildCycles(doc: SessionDoc) {
-  const nicks = nickMap(doc)
-  return doc.cycles.map((c) => {
-    const hands = doc.hands.filter((h) => h.cycleIndex === c.index)
-    const handIndexes = new Set(hands.map((h) => h.index))
-    const huEvents = doc.huEvents
-      .filter((e) => handIndexes.has(e.handIndex))
-      .map((e) => ({
-        handIndex: e.handIndex,
-        winner: nicks[e.input.winnerId] || e.input.winnerId,
-        winType: e.input.winType === 'zimo' ? '自摸' : '点炮',
-        fan: BASIC_FAN_LABEL[e.input.basicFan] || e.input.basicFan,
-        perPayer: e.score.perPayer,
-      }))
-    const handSummaries = hands.map((h) => {
-      const hus = huEvents.filter((e) => e.handIndex === h.index)
-      return {
-        index: h.index,
-        liuju: h.liuju,
-        dealer: nicks[h.dealerId] || h.dealerId,
-        streak: h.streak,
-        hus,
-      }
-    })
-    return {
-      index: c.index,
-      expanded: false,
-      settlements: c.settlements.map((s) => ({
-        ...s,
-        nickname: nicks[s.playerId] || s.playerId,
-      })),
-      hands: handSummaries,
-    }
-  })
-}
+import {
+  presentSession,
+  toggleCycleExpanded,
+} from './sessionState'
 
 Page({
   data: {
@@ -75,7 +17,8 @@ Page({
     chipValueYuan: 0,
     status: '',
     statusLabel: '',
-    cycles: [] as ReturnType<typeof buildCycles>,
+    ended: false,
+    cycles: [] as ReturnType<typeof presentSession>['cycles'],
     canEnd: false,
     loading: true,
     busy: false,
@@ -128,31 +71,24 @@ Page({
   },
 
   applyDoc(doc: SessionDoc) {
-    const expanded = new Set(
-      this.data.cycles.filter((c) => c.expanded).map((c) => c.index),
-    )
-    const cycles = buildCycles(doc).map((c) => ({
-      ...c,
-      expanded: expanded.has(c.index),
-    }))
-    const canEnd = doc.status !== 'ended' && !doc.currentCycle
+    const expanded =
+      this.data.cycles.length === 0
+        ? 'latest'
+        : new Set(
+            this.data.cycles.filter((c) => c.expanded).map((c) => c.index),
+          )
+    const view = presentSession(doc, expanded)
     this.setData({
-      roomCode: doc.roomCode,
-      chipValueYuan: doc.chipValueYuan,
-      status: doc.status,
-      statusLabel: STATUS_LABEL[doc.status] || doc.status,
-      cycles,
-      canEnd,
+      ...view,
       loading: false,
     })
   },
 
   onToggleCycle(e: WechatMiniprogram.TouchEvent) {
     const index = Number(e.currentTarget.dataset.index)
-    const cycles = this.data.cycles.map((c) =>
-      c.index === index ? { ...c, expanded: !c.expanded } : c,
-    )
-    this.setData({ cycles })
+    this.setData({
+      cycles: toggleCycleExpanded(this.data.cycles, index),
+    })
   },
 
   async onEndSession() {
