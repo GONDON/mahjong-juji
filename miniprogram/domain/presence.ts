@@ -17,7 +17,7 @@ export type ClaimableSeat = {
 }
 
 export function canMutateSeats(status: string): boolean {
-  return status === 'open' || status === 'settling'
+  return status === 'open'
 }
 
 export function upsertMember(

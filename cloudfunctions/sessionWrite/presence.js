@@ -7,7 +7,7 @@ const { trimNickname } = require('./character')
 const WIND_NICKNAMES = ['东', '南', '西', '北']
 
 function canMutateSeats(status) {
-  return status === 'open' || status === 'settling'
+  return status === 'open'
 }
 
 function upsertMember(members, patch, now) {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canMutateSeats,
   claimSeat,
   renameUnclaimedSeat,
   scorerUnclaimSeat,
@@ -63,5 +64,14 @@ describe('presence', () => {
     expect(renameUnclaimedSeat(again.seats, 'nid_东', '老王').ok).toBe(false)
     expect(unclaimSeat(again.seats, 'nid_东', 'oa').ok).toBe(true)
     expect(unclaimSeat(again.seats, 'nid_东', 'ob').ok).toBe(false)
+  })
+})
+
+describe('canMutateSeats', () => {
+  it('allows claims only while the table is open', () => {
+    expect(canMutateSeats('open')).toBe(true)
+    expect(canMutateSeats('settling')).toBe(false)
+    expect(canMutateSeats('playing')).toBe(false)
+    expect(canMutateSeats('ended')).toBe(false)
   })
 })
