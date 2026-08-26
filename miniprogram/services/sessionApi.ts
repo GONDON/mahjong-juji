@@ -128,6 +128,7 @@ export interface SessionDoc {
   scorerOpenId?: string
   seats: SessionSeat[]
   members: SessionMember[]
+  memberOpenIds: string[]
   status: SessionStatus
   currentCycle?: CurrentCycle
   cycles: SettledCycle[]
@@ -233,6 +234,10 @@ function cloneDoc(doc: SessionDoc): SessionDoc {
   return JSON.parse(JSON.stringify(doc)) as SessionDoc
 }
 
+function syncMemberOpenIds(doc: SessionDoc): void {
+  doc.memberOpenIds = (doc.members || []).map((m) => m.openId)
+}
+
 function requireMock(sessionId: string): MockEntry {
   const entry = mockStore.get(sessionId)
   if (!entry) throw new Error(`session not found: ${sessionId}`)
@@ -325,6 +330,7 @@ export async function createSession(input: {
     scorerOpenId: MOCK_SCORER_ID,
     seats,
     members,
+    memberOpenIds: members.map((m) => m.openId),
     status: 'open',
     cycles: [],
     hands: [],
@@ -366,7 +372,7 @@ export async function startCycle(
   const entry = requireMock(sessionId)
   const { doc } = entry
   assertMockScorer(doc)
-  if (doc.status === 'ended') throw new Error('session ended')
+  if (doc.status !== 'open') throw new Error('session not open')
   if (doc.currentCycle) throw new Error('cycle already in progress')
 
   const dealer = freshDealer(dealerId)
@@ -525,6 +531,19 @@ export async function endSession(sessionId: string): Promise<void> {
   entry.doc.status = 'ended'
 }
 
+export async function advanceToNextCycle(sessionId: string): Promise<void> {
+  if (!USE_MOCK) {
+    await callSessionWrite('advanceToNextCycle', { sessionId })
+    return
+  }
+  const entry = requireMock(sessionId)
+  assertMockScorer(entry.doc)
+  if (entry.doc.status !== 'settling' || entry.doc.currentCycle) {
+    throw new Error('session not settling')
+  }
+  entry.doc.status = 'open'
+}
+
 export async function listYearSettlements(
   year: number,
 ): Promise<SessionPlayerYuan[]> {
@@ -618,6 +637,7 @@ export async function upsertCharacter(input: {
         ? { ...s, nickname: card.nickname, avatarId: card.avatarId }
         : s,
     )
+    syncMemberOpenIds(doc)
   }
 
   return { ...card }
@@ -645,6 +665,7 @@ export async function enterSession(input: {
     { openId: mockActorOpenId, ...snap },
     Date.now(),
   )
+  syncMemberOpenIds(doc)
   return cloneDoc(doc)
 }
 
@@ -671,6 +692,7 @@ export async function claimSeat(
       { openId: mockActorOpenId, ...snap },
       Date.now(),
     )
+    syncMemberOpenIds(doc)
   }
   const result = applyClaimSeat(doc.seats, playerId, {
     openId: mockActorOpenId,

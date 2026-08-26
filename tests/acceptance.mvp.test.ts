@@ -9,6 +9,7 @@ import {
   listYearSettlements,
   settleCycleManual,
   startCycle,
+  advanceToNextCycle,
 } from '../miniprogram/services/sessionApi'
 import type { HuInput } from '../miniprogram/domain/types'
 
@@ -94,7 +95,8 @@ describe('MVP acceptance (design spec §4–§8)', () => {
     expect(doc.cycles).toHaveLength(1)
     expect(doc.currentCycle).toBeUndefined()
 
-    // 5. 再开一轮 → 手动选庄 C（无骰子），连庄清零
+    await expect(startCycle(sessionId, idC)).rejects.toThrow(/open/i)
+    await advanceToNextCycle(sessionId)
     await startCycle(sessionId, idC)
     doc = await getSession(sessionId)
     expect(doc.currentCycle?.index).toBe(2)
