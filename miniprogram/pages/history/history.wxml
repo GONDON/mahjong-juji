@@ -1,0 +1,36 @@
+<view class="page">
+  <view wx:if="{{loading && recents.length === 0}}" class="hint">加载中…</view>
+
+  <block wx:else>
+    <view wx:if="{{recents.length === 0}}" class="empty-state">
+      <image class="empty-state-img" src="/assets/empty.svg" mode="aspectFit" />
+      <text>你参加过的牌局会出现在这里。</text>
+    </view>
+
+    <view
+      wx:for="{{recents}}"
+      wx:key="sessionId"
+      class="campaign {{item.active ? '' : 'campaign--done'}}"
+      data-id="{{item.sessionId}}"
+      bindtap="onRecentTap"
+    >
+      <image
+        class="campaign-mark"
+        src="{{item.active ? '/assets/ico-table.svg' : '/assets/ico-scroll.svg'}}"
+        mode="aspectFit"
+      />
+      <view class="campaign-copy">
+        <text class="campaign-title">{{item.title}}</text>
+        <text class="campaign-meta">{{item.meta}}</text>
+      </view>
+      <view
+        wx:if="{{item.active}}"
+        class="reenter"
+        hover-class="reenter--pressed"
+        data-id="{{item.sessionId}}"
+        catchtap="onReenterTap"
+      >再入局</view>
+      <text wx:else class="finished">已结束</text>
+    </view>
+  </block>
+</view>

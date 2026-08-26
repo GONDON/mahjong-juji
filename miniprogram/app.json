@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/history/history",
     "pages/profile/profile",
     "pages/create/create",
     "pages/dealer-pick/dealer-pick",

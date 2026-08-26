@@ -2,22 +2,19 @@ import { describe, expect, it } from 'vitest'
 import {
   CHIP_OPTIONS,
   DEFAULT_SEAT_NICKNAMES,
-  RECENT_DELETE_WIDTH,
+  HOME_FETCH_LIMIT,
+  HOME_RECENT_LIMIT,
+  HISTORY_FETCH_LIMIT,
   canSubmitJoin,
-  clampRecentSwipe,
-  formatEndedAgo,
   joinCodeCells,
   joinCodeCaretSlot,
   normalizeJoinCode,
-  parseStoredCampaigns,
   presentJoinField,
   presentRecentCampaign,
-  removeRecentCampaign,
   selectChipValue,
   sessionDetailRoute,
   sessionRoute,
-  snapRecentSwipe,
-  upsertRecentCampaign,
+  sliceHomeRecents,
   type RecentCampaign,
 } from '../miniprogram/pages/index/indexState'
 
@@ -26,7 +23,7 @@ const playing: RecentCampaign = {
   roomCode: '8K2P',
   chipValueYuan: 2,
   status: 'playing',
-  updatedAt: 1_000,
+  createdAt: 1_000,
 }
 
 const ended: RecentCampaign = {
@@ -34,7 +31,7 @@ const ended: RecentCampaign = {
   roomCode: '4A9B',
   chipValueYuan: 5,
   status: 'ended',
-  updatedAt: 500,
+  createdAt: 500,
 }
 
 describe('lobby chip value', () => {
@@ -109,31 +106,39 @@ describe('lobby recent campaigns', () => {
     expect(DEFAULT_SEAT_NICKNAMES).toEqual(['东', '南', '西', '北'])
   })
 
-  it('puts the newest campaign first and drops duplicates', () => {
-    const next = { ...playing, chipValueYuan: 5, updatedAt: 2_000 }
-    const list = upsertRecentCampaign([ended, playing], next)
-    expect(list.map((c) => c.sessionId)).toEqual(['sess_1', 'sess_2'])
-    expect(list[0].chipValueYuan).toBe(5)
+  it('caps fetch/display constants', () => {
+    expect(HOME_RECENT_LIMIT).toBe(5)
+    expect(HOME_FETCH_LIMIT).toBe(6)
+    expect(HISTORY_FETCH_LIMIT).toBe(50)
   })
 
-  it('removes a campaign by session id', () => {
-    expect(removeRecentCampaign([playing, ended], 'sess_1')).toEqual([ended])
-    expect(removeRecentCampaign([playing, ended], 'missing')).toEqual([
-      playing,
-      ended,
-    ])
+  it('slices six rows to five and flags hasMore', () => {
+    const six = [0, 1, 2, 3, 4, 5].map((i) => ({
+      ...playing,
+      sessionId: `sess_${i}`,
+      createdAt: 1000 - i,
+    }))
+    expect(sliceHomeRecents([])).toEqual({ recents: [], hasMore: false })
+    expect(sliceHomeRecents(six.slice(0, 5))).toEqual({
+      recents: six.slice(0, 5),
+      hasMore: false,
+    })
+    expect(sliceHomeRecents(six)).toEqual({
+      recents: six.slice(0, 5),
+      hasMore: true,
+    })
   })
 
   it('presents active and finished rows for the lobby list', () => {
-    expect(presentRecentCampaign(playing, 1_000)).toMatchObject({
+    expect(presentRecentCampaign(playing)).toMatchObject({
       title: '房间 8K2P',
       meta: '底分 2',
       actionLabel: '再入局',
       active: true,
     })
-    expect(presentRecentCampaign(ended, 1_000 + 2 * 60 * 60 * 1000)).toMatchObject({
+    expect(presentRecentCampaign(ended)).toMatchObject({
       title: '房间 4A9B',
-      meta: '已结束 · 2 小时前',
+      meta: '已结束',
       actionLabel: '已结束',
       active: false,
     })
@@ -160,34 +165,3 @@ describe('lobby recent campaigns', () => {
   })
 })
 
-describe('recent swipe', () => {
-  it('clamps left to the delete width and ignores a right swipe', () => {
-    expect(clampRecentSwipe(40)).toBe(0)
-    expect(clampRecentSwipe(-40)).toBe(-40)
-    expect(clampRecentSwipe(-200)).toBe(-RECENT_DELETE_WIDTH)
-  })
-
-  it('snaps open past halfway, otherwise closed', () => {
-    expect(snapRecentSwipe(-20)).toBe(0)
-    expect(snapRecentSwipe(-RECENT_DELETE_WIDTH / 2 - 1)).toBe(
-      -RECENT_DELETE_WIDTH,
-    )
-    expect(snapRecentSwipe(-RECENT_DELETE_WIDTH)).toBe(-RECENT_DELETE_WIDTH)
-  })
-})
-
-describe('ended-ago copy', () => {
-  it('uses hour-scale Chinese relative time', () => {
-    const now = 10_000_000
-    expect(formatEndedAgo(now - 2 * 60 * 60 * 1000, now)).toBe('2 小时前')
-  })
-})
-
-describe('stored campaigns', () => {
-  it('keeps well-formed rows and drops junk', () => {
-    expect(
-      parseStoredCampaigns([playing, { sessionId: 1 }, null, ended]),
-    ).toEqual([playing, ended])
-    expect(parseStoredCampaigns(undefined)).toEqual([])
-  })
-})

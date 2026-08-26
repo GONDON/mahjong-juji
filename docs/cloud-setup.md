@@ -37,7 +37,14 @@ In the cloud console, create:
 
    `memberOpenIds` is a string array kept in sync with `members[].openId`.
    Old docs without the field cannot be watched; `getSession` poll still works.
-   Do not allow client `where` listing. Room-code lookup stays on `sessionWrite`.
+   Client **may** list with `where({ memberOpenIds: <caller's openId> })` plus
+   `.field` / `.orderBy('createdAt', 'desc')` (homepage and 全部牌局).
+   Do **not** query by `roomCode` from the client; room-code lookup stays on
+   `sessionWrite`.
+
+   Create a composite index on `sessions`: `memberOpenIds` ascending,
+   `createdAt` descending. Without it, `orderBy` fails and the lobby shows
+   「加载失败」.
 
 2. **`users`** — character cards keyed by WeChat openId (`_id` = openId). Same
    client-write-false pattern; the cloud function uses the server-side SDK.

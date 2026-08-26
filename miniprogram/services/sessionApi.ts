@@ -1,9 +1,12 @@
 /**
  * sessionApi — persistence facade for night sessions.
  *
- * Cloud (USE_MOCK=false): all actions go through
+ * Cloud (USE_MOCK=false): writes and most reads go through
  *   wx.cloud.callFunction({ name: 'sessionWrite', data: { action, ... } })
  * so scorer checks stay server-side. See docs/cloud-setup.md.
+ * `listMySessions` is a client read of `sessions` filtered by
+ * `memberOpenIds`; it does not go through `sessionWrite`. Room-code
+ * lookup still does.
  *
  * Collections (denormalized `sessions` docs in MVP cloud stub):
  * - sessions: _id, roomCode, chipValueYuan, scorerOpenId/scorerId,
@@ -74,6 +77,52 @@ async function callSessionWrite<T>(
 }
 
 export type SessionStatus = 'open' | 'playing' | 'settling' | 'ended'
+
+export const LIST_MY_SESSIONS_MAX = 50
+
+export type SessionSummary = {
+  sessionId: string
+  roomCode: string
+  chipValueYuan: number
+  status: SessionStatus
+  createdAt: number
+}
+
+function isSessionStatus(value: unknown): value is SessionStatus {
+  return (
+    value === 'open' ||
+    value === 'playing' ||
+    value === 'settling' ||
+    value === 'ended'
+  )
+}
+
+export function toSessionSummary(
+  raw: Record<string, unknown>,
+): SessionSummary | null {
+  const sessionId =
+    typeof raw.sessionId === 'string' && raw.sessionId
+      ? raw.sessionId
+      : typeof raw._id === 'string'
+        ? raw._id
+        : ''
+  if (
+    !sessionId ||
+    typeof raw.roomCode !== 'string' ||
+    typeof raw.chipValueYuan !== 'number' ||
+    typeof raw.createdAt !== 'number' ||
+    !isSessionStatus(raw.status)
+  ) {
+    return null
+  }
+  return {
+    sessionId,
+    roomCode: raw.roomCode,
+    chipValueYuan: raw.chipValueYuan,
+    status: raw.status,
+    createdAt: raw.createdAt,
+  }
+}
 
 export interface SessionSeat {
   playerId: PlayerId
@@ -295,6 +344,48 @@ export function __resetMockSessions(): void {
   seq = 0
   mockUsers.clear()
   mockActorOpenId = MOCK_SCORER_ID
+}
+
+function clampListLimit(limit: number | undefined): number {
+  const n = limit == null ? LIST_MY_SESSIONS_MAX : limit
+  return Math.max(0, Math.min(n, LIST_MY_SESSIONS_MAX))
+}
+
+export async function listMySessions(opts?: {
+  limit?: number
+}): Promise<SessionSummary[]> {
+  const limit = clampListLimit(opts?.limit)
+  if (!USE_MOCK) {
+    const { openId } = await whoami()
+    if (typeof wx === 'undefined' || !wx.cloud || !wx.cloud.database) {
+      throw new Error('cloud database unavailable')
+    }
+    const res = await wx.cloud
+      .database()
+      .collection('sessions')
+      .where({ memberOpenIds: openId })
+      .field({
+        sessionId: true,
+        roomCode: true,
+        chipValueYuan: true,
+        status: true,
+        createdAt: true,
+      })
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get()
+    const rows = (res && res.data) || []
+    return rows
+      .map((raw: Record<string, unknown>) => toSessionSummary(raw))
+      .filter((row: SessionSummary | null): row is SessionSummary => row !== null)
+  }
+  return [...mockStore.values()]
+    .map((entry) => entry.doc)
+    .filter((doc) => (doc.memberOpenIds || []).includes(mockActorOpenId))
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, limit)
+    .map((doc) => toSessionSummary(doc as unknown as Record<string, unknown>))
+    .filter((row): row is SessionSummary => row !== null)
 }
 
 export async function createSession(input: {

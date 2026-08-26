@@ -1,5 +1,5 @@
 <view class="page">
-  <scroll-view class="body" scroll-y="{{!lockingScroll}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+  <scroll-view class="body" scroll-y enhanced="{{true}}" show-scrollbar="{{false}}">
     <view class="body-clip">
     <view class="identity">
       <view class="profile face-frame" hover-class="profile--pressed" bindtap="onProfileTap">
@@ -96,7 +96,7 @@
         </view>
       </view>
 
-      <view wx:if="{{recents.length === 0}}" class="empty-state">
+      <view wx:if="{{recentsReady && recents.length === 0}}" class="empty-state">
         <image class="empty-state-img" src="/assets/empty.svg" mode="aspectFit" />
         <text>开一局或输入房间码，牌局会出现在这里。</text>
       </view>
@@ -104,45 +104,35 @@
       <view
         wx:for="{{recents}}"
         wx:key="sessionId"
-        class="swipe"
+        class="campaign {{item.active ? '' : 'campaign--done'}}"
+        data-id="{{item.sessionId}}"
+        bindtap="onRecentTap"
       >
-        <view class="swipe-under">
-          <view
-            class="swipe-delete"
-            hover-class="swipe-delete--pressed"
-            data-id="{{item.sessionId}}"
-            catchtap="onRecentDelete"
-          >删除</view>
+        <image
+          class="campaign-mark"
+          src="{{item.active ? '/assets/ico-table.svg' : '/assets/ico-scroll.svg'}}"
+          mode="aspectFit"
+        />
+        <view class="campaign-copy">
+          <text class="campaign-title">{{item.title}}</text>
+          <text class="campaign-meta">{{item.meta}}</text>
         </view>
         <view
-          class="campaign {{item.active ? '' : 'campaign--done'}}"
-          style="transform: translateX({{item.offsetX}}px);"
+          wx:if="{{item.active}}"
+          class="reenter"
+          hover-class="reenter--pressed"
           data-id="{{item.sessionId}}"
-          bindtouchstart="onRecentTouchStart"
-          bindtouchmove="onRecentTouchMove"
-          bindtouchend="onRecentTouchEnd"
-          bindtouchcancel="onRecentTouchEnd"
-          bindtap="onRecentTap"
-        >
-          <image
-            class="campaign-mark"
-            src="{{item.active ? '/assets/ico-table.svg' : '/assets/ico-scroll.svg'}}"
-            mode="aspectFit"
-          />
-          <view class="campaign-copy">
-            <text class="campaign-title">{{item.title}}</text>
-            <text class="campaign-meta">{{item.meta}}</text>
-          </view>
-          <view
-            wx:if="{{item.active}}"
-            class="reenter"
-            hover-class="reenter--pressed"
-            data-id="{{item.sessionId}}"
-            catchtap="onReenterTap"
-          >再入局</view>
-          <text wx:else class="finished">已结束</text>
-        </view>
+          catchtap="onReenterTap"
+        >再入局</view>
+        <text wx:else class="finished">已结束</text>
       </view>
+
+      <view
+        wx:if="{{hasMore}}"
+        class="see-all"
+        hover-class="see-all--pressed"
+        bindtap="onSeeAllTap"
+      >查看全部</view>
     </view>
     </view>
   </scroll-view>

@@ -1,14 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   __resetMockSessions,
+  __setMockActor,
   __setMockOpenId,
   advanceToNextCycle,
   appendHu,
   createSession,
+  enterSession,
   getSession,
+  listMySessions,
   MOCK_SCORER_ID,
+  LIST_MY_SESSIONS_MAX,
   settleCycleManual,
   startCycle,
+  toSessionSummary,
 } from '../miniprogram/services/sessionApi'
 
 describe('sessionApi mock', () => {
@@ -120,5 +125,65 @@ describe('sessionApi mock', () => {
     __setMockOpenId(null)
     await advanceToNextCycle(sessionId)
     expect((await getSession(sessionId)).status).toBe('open')
+  })
+})
+
+describe('listMySessions', () => {
+  beforeEach(() => {
+    __resetMockSessions()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('maps a row and fills sessionId from _id', () => {
+    expect(
+      toSessionSummary({
+        _id: 'sess_x',
+        roomCode: '8K2P',
+        chipValueYuan: 2,
+        status: 'open',
+        createdAt: 10,
+      }),
+    ).toEqual({
+      sessionId: 'sess_x',
+      roomCode: '8K2P',
+      chipValueYuan: 2,
+      status: 'open',
+      createdAt: 10,
+    })
+    expect(toSessionSummary({ roomCode: '8K2P' })).toBeNull()
+  })
+
+  it('returns only rooms the actor joined, newest first, capped', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1000)
+    const a = await createSession({
+      chipValueYuan: 1,
+      nicknames: ['东', '南', '西', '北'],
+    })
+    vi.setSystemTime(2000)
+    const b = await createSession({
+      chipValueYuan: 2,
+      nicknames: ['东', '南', '西', '北'],
+    })
+    vi.useRealTimers()
+
+    __setMockActor('user-b')
+    await enterSession({ sessionId: a.sessionId })
+
+    const asGuest = await listMySessions()
+    expect(asGuest.map((s) => s.sessionId)).toEqual([a.sessionId])
+
+    __setMockActor(MOCK_SCORER_ID)
+    const asScorer = await listMySessions()
+    expect(asScorer.map((s) => s.sessionId)).toEqual([b.sessionId, a.sessionId])
+    expect(asScorer[0].chipValueYuan).toBe(2)
+
+    const capped = await listMySessions({ limit: 1 })
+    expect(capped).toHaveLength(1)
+    expect(capped[0].sessionId).toBe(b.sessionId)
+    expect(LIST_MY_SESSIONS_MAX).toBe(50)
   })
 })

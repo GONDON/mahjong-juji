@@ -1,0 +1,77 @@
+.page {
+  min-height: 100vh;
+  padding: 28rpx 28rpx 80rpx;
+  box-sizing: border-box;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.hint {
+  margin-top: 120rpx;
+  text-align: center;
+  color: var(--muted);
+  font-size: 30rpx;
+}
+
+.campaign {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+  padding: 16rpx 12rpx;
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: var(--radius-tile);
+  background: var(--panel);
+}
+
+.campaign--done .campaign-mark,
+.campaign--done .campaign-copy,
+.campaign--done .finished {
+  opacity: 0.55;
+}
+
+.campaign-mark {
+  width: 56rpx;
+  height: 56rpx;
+  flex-shrink: 0;
+}
+
+.campaign-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2rpx;
+  min-width: 0;
+}
+
+.campaign-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.campaign-meta,
+.finished {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.reenter {
+  flex-shrink: 0;
+  height: 56rpx;
+  padding: 0 16rpx;
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: var(--radius-pill);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 50rpx;
+}
+
+.reenter--pressed {
+  background: var(--peach-wash);
+}

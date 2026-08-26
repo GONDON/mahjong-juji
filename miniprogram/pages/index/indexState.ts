@@ -4,9 +4,9 @@ import { tablePathFor } from '../../domain/sessionRoute'
 export const CHIP_OPTIONS = [1, 2, 3, 4, 5] as const
 export const DEFAULT_SEAT_NICKNAMES = ['东', '南', '西', '北'] as const
 export const ROOM_CODE_LENGTH = 4
-export const RECENT_STORAGE_KEY = 'lobby.recentCampaigns'
-export const MAX_RECENT = 6
-export const RECENT_DELETE_WIDTH = 72
+export const HOME_RECENT_LIMIT = 5
+export const HOME_FETCH_LIMIT = 6
+export const HISTORY_FETCH_LIMIT = 50
 
 const ROOM_CODE_CHARS = /[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g
 
@@ -15,7 +15,7 @@ export type RecentCampaign = {
   roomCode: string
   chipValueYuan: number
   status: SessionStatus
-  updatedAt: number
+  createdAt: number
 }
 
 export type RecentCampaignView = RecentCampaign & {
@@ -79,57 +79,23 @@ export function canSubmitJoin(code: string): boolean {
   return normalizeJoinCode(code).length === ROOM_CODE_LENGTH
 }
 
-export function upsertRecentCampaign(
+export function sliceHomeRecents(
   list: RecentCampaign[],
-  next: RecentCampaign,
-  max = MAX_RECENT,
-): RecentCampaign[] {
-  const rest = list.filter((item) => item.sessionId !== next.sessionId)
-  return [next, ...rest].slice(0, max)
-}
-
-export function removeRecentCampaign(
-  list: RecentCampaign[],
-  sessionId: string,
-): RecentCampaign[] {
-  return list.filter((item) => item.sessionId !== sessionId)
-}
-
-export function clampRecentSwipe(
-  dx: number,
-  width = RECENT_DELETE_WIDTH,
-): number {
-  return Math.min(0, Math.max(-width, dx))
-}
-
-export function snapRecentSwipe(
-  offsetX: number,
-  width = RECENT_DELETE_WIDTH,
-): number {
-  return offsetX < -width / 2 ? -width : 0
-}
-
-export function formatEndedAgo(updatedAt: number, now: number): string {
-  const ms = Math.max(0, now - updatedAt)
-  const minutes = Math.floor(ms / 60_000)
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes} 分钟前`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} 小时前`
-  return `${Math.floor(hours / 24)} 天前`
+): { recents: RecentCampaign[]; hasMore: boolean } {
+  return {
+    recents: list.slice(0, HOME_RECENT_LIMIT),
+    hasMore: list.length > HOME_RECENT_LIMIT,
+  }
 }
 
 export function presentRecentCampaign(
   campaign: RecentCampaign,
-  now: number,
 ): RecentCampaignView {
   const active = campaign.status !== 'ended'
   return {
     ...campaign,
     title: `房间 ${campaign.roomCode}`,
-    meta: active
-      ? `底分 ${campaign.chipValueYuan}`
-      : `已结束 · ${formatEndedAgo(campaign.updatedAt, now)}`,
+    meta: active ? `底分 ${campaign.chipValueYuan}` : '已结束',
     actionLabel: active ? '再入局' : '已结束',
     active,
   }
@@ -143,22 +109,3 @@ export function sessionDetailRoute(campaign: RecentCampaign): string {
   return `/pages/session/session?sessionId=${encodeURIComponent(campaign.sessionId)}`
 }
 
-export function parseStoredCampaigns(raw: unknown): RecentCampaign[] {
-  if (!Array.isArray(raw)) return []
-  return raw.filter(isRecentCampaign)
-}
-
-function isRecentCampaign(value: unknown): value is RecentCampaign {
-  if (!value || typeof value !== 'object') return false
-  const item = value as RecentCampaign
-  return (
-    typeof item.sessionId === 'string' &&
-    typeof item.roomCode === 'string' &&
-    typeof item.chipValueYuan === 'number' &&
-    typeof item.updatedAt === 'number' &&
-    (item.status === 'open' ||
-      item.status === 'playing' ||
-      item.status === 'settling' ||
-      item.status === 'ended')
-  )
-}
