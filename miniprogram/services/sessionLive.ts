@@ -174,13 +174,10 @@ export function subscribeSession(opts: {
 
   function startPolling() {
     if (stopped || poll) return
-    stopWatch()
-    clearFirstPacketTimer()
     poll = startPoll({
       tick: pollTick,
       intervalMs: PRESENCE_POLL_MS,
     })
-    scheduleWatchRetry()
   }
 
   function attachWatch() {
@@ -188,22 +185,17 @@ export function subscribeSession(opts: {
     const handle = watchFn(opts.sessionId, {
       onChange(raw) {
         if (stopped) return
-        stopPoll()
-        clearRetryTimer()
         apply(raw)
       },
       onError() {
         if (stopped) return
         stopWatch()
         startPolling()
+        scheduleWatchRetry()
       },
     })
     if (!handle) return
     watcher = handle
-    if (poll) {
-      stopPoll()
-      clearRetryTimer()
-    }
     if (!gotPacket) {
       clearFirstPacketTimer()
       firstPacketTimer = setTimeoutFn(() => {
@@ -215,7 +207,8 @@ export function subscribeSession(opts: {
   }
 
   attachWatch()
-  if (!watcher) startPolling()
+  startPolling()
+  if (!watcher) scheduleWatchRetry()
 
   return {
     stop() {

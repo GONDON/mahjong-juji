@@ -171,6 +171,28 @@ describe('subscribeSession', () => {
     live.stop()
   })
 
+  it('keeps polling after a watch snapshot so later joiners appear', async () => {
+    vi.useFakeTimers()
+    const getSession = vi.fn(async () => doc('open'))
+    let send!: (raw: Record<string, unknown>) => void
+    const live = subscribeSession({
+      sessionId: 's1',
+      page: 'dealer-pick',
+      onDoc: vi.fn(),
+      onNavigate: vi.fn(),
+      getSession,
+      watch: (_id, handlers) => {
+        send = handlers.onChange
+        return { close: vi.fn() }
+      },
+      startPoll: startPresencePoll,
+    })
+    send(doc('open') as unknown as Record<string, unknown>)
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(getSession).toHaveBeenCalled()
+    live.stop()
+  })
+
   it('stop() prevents further poll ticks', async () => {
     vi.useFakeTimers()
     const getSession = vi.fn(async () => doc('open'))
