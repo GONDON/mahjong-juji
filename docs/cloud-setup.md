@@ -1,6 +1,6 @@
 # WeChat cloud setup (TCMSP)
 
-CI and local `npm test` keep **`USE_MOCK=true`** (default). Use this guide when you have a real WeChat cloud environment and want the miniprogram to call `sessionWrite`.
+This project's cloud env is **`cloud1-d4g7zfv1x770ba8fe`**. Node `npm test` still uses the in-memory mock (`typeof wx === 'undefined'`). DevTools / device call `sessionWrite`.
 
 ## 1. Create a cloud environment
 
@@ -25,21 +25,37 @@ export const USE_MOCK = false                   // was true
 
 In the cloud console, create:
 
-1. **`sessions`** — denormalized session docs (permissions: only creator / admin write is fine for MVP; the cloud function uses server-side SDK).
-2. **`users`** — character cards keyed by WeChat openId (`_id` = openId). Same permissions as above.
+1. **`sessions`** — denormalized session docs. Cloud function writes with the
+   server SDK. Client **must not write**. Custom security rules:
+
+   ```
+   {
+     "read": "auth.openid != null && doc.memberOpenIds != null && auth.openid in doc.memberOpenIds",
+     "write": false
+   }
+   ```
+
+   `memberOpenIds` is a string array kept in sync with `members[].openId`.
+   Old docs without the field cannot be watched; `getSession` poll still works.
+   Do not allow client `where` listing. Room-code lookup stays on `sessionWrite`.
+
+2. **`users`** — character cards keyed by WeChat openId (`_id` = openId). Same
+   client-write-false pattern; the cloud function uses the server-side SDK.
 
 ## 4. Deploy `sessionWrite`
 
 1. In DevTools, right-click `cloudfunctions/sessionWrite` → **上传并部署：云端安装依赖**.
 2. Confirm the function appears under 云函数 and uses the same env as `CLOUD_ENV_ID`.
 
-The function routes on `action` and checks `cloud.getWXContext().OPENID` against `scorerOpenId` for scorer write actions (`startCycle`, `appendHu`, `liuju`, `undoLastHu`, `settleCycleManual`, `endSession`, `scorerUnclaimSeat`, `scorerRenameSeat`). Character / seat-claim actions (`whoami`, `getCharacter`, `upsertCharacter`, `enterSession`, `claimSeat`, `unclaimSeat`) use the caller's openId without requiring scorer.
+The function routes on `action` and checks `cloud.getWXContext().OPENID` against `scorerOpenId` for scorer write actions (`startCycle`, `appendHu`, `liuju`, `undoLastHu`, `settleCycleManual`, `advanceToNextCycle`, `endSession`, `scorerUnclaimSeat`, `scorerRenameSeat`). Character / seat-claim actions (`whoami`, `getCharacter`, `upsertCharacter`, `enterSession`, `claimSeat`, `unclaimSeat`) use the caller's openId without requiring scorer.
 
 ## 5. Smoke on device / DevTools
 
 1. Rebuild the miniprogram with `USE_MOCK=false`.
 2. Open a room → pick dealer → record one hu → confirm chips update.
-3. If you see *Cloud database not configured…*, re-check env id, collection name, and deploy status.
+3. Two simulators: A starts a cycle while B is on dealer-pick — B should move to
+   battle within a couple of seconds (watch, or poll if rules are not set yet).
+4. If you see *Cloud database not configured…*, re-check env id, collection name, and deploy status.
 
 ## 6. Switch back to mock
 

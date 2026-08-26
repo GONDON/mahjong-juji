@@ -3,7 +3,8 @@
  *
  * Client: wx.cloud.callFunction({ name: 'sessionWrite', data: { action, ... } })
  * Actions: createSession, getSession, getSessionByRoomCode, startCycle,
- *   appendHu, liuju, undoLastHu, settleCycleManual, endSession, listYearSettlements,
+ *   appendHu, liuju, undoLastHu, settleCycleManual, advanceToNextCycle, endSession,
+ *   listYearSettlements,
  *   whoami, getCharacter, upsertCharacter, enterSession, claimSeat, unclaimSeat,
  *   scorerUnclaimSeat, scorerRenameSeat
  *
@@ -51,6 +52,21 @@ function getDb() {
   } catch (e) {
     throw new Error(DB_HINT)
   }
+}
+
+let collectionsReady = false
+
+async function ensureCollections() {
+  if (collectionsReady) return
+  const db = getDb()
+  for (const name of ['sessions', 'users']) {
+    try {
+      await db.createCollection(name)
+    } catch {
+      // Already exists, or the next read/write will surface a real error.
+    }
+  }
+  collectionsReady = true
 }
 
 function sessionsCol() {
@@ -152,7 +168,12 @@ async function loadById(sessionId) {
 
 async function save(id, doc) {
   const { _id, ...payload } = doc
+  syncMemberOpenIds(payload)
   await sessionsCol().doc(id).set({ data: payload })
+}
+
+function syncMemberOpenIds(doc) {
+  doc.memberOpenIds = (doc.members || []).map((m) => m.openId)
 }
 
 async function loadUserCard(openid) {
@@ -228,6 +249,7 @@ async function createSession(event, openid) {
       scorerId: openid,
       seats,
       members,
+      memberOpenIds: members.map((m) => m.openId),
       status: 'open',
       cycles: [],
       hands: [],
@@ -257,7 +279,7 @@ async function startCycle(event, openid) {
   const { sessionId, dealerId } = event
   const { doc, id } = await loadById(sessionId)
   assertScorer(doc, openid)
-  if (doc.status === 'ended') throw new Error('session ended')
+  if (doc.status !== 'open') throw new Error('session not open')
   if (doc.currentCycle) throw new Error('cycle already in progress')
 
   const dealer = freshDealer(dealerId)
@@ -388,6 +410,18 @@ async function endSession(event, openid) {
     throw new Error('settle current cycle before ending session')
   }
   doc.status = 'ended'
+  await save(id, doc)
+  return null
+}
+
+async function advanceToNextCycle(event, openid) {
+  const { sessionId } = event
+  const { doc, id } = await loadById(sessionId)
+  assertScorer(doc, openid)
+  if (doc.status !== 'settling' || doc.currentCycle) {
+    throw new Error('session not settling')
+  }
+  doc.status = 'open'
   await save(id, doc)
   return null
 }
@@ -524,6 +558,7 @@ async function claimSeat(event, openid) {
     }
     applyClaimableSeats(doc, claimed.seats)
     const { _id, ...payload } = doc
+    syncMemberOpenIds(payload)
     await transaction.collection('sessions').doc(sessionId).set({ data: payload })
     return publicDoc(doc)
   })
@@ -582,6 +617,9 @@ exports.main = async function main(event = {}) {
   const { OPENID } = cloud.getWXContext()
   const action = event.action
   try {
+    if (action !== 'whoami') {
+      await ensureCollections()
+    }
     switch (action) {
       case 'createSession':
         return ok(await createSession(event, OPENID))
@@ -599,6 +637,8 @@ exports.main = async function main(event = {}) {
         return ok(await undoLastHu(event, OPENID))
       case 'settleCycleManual':
         return ok(await settleCycleManual(event, OPENID))
+      case 'advanceToNextCycle':
+        return ok(await advanceToNextCycle(event, OPENID))
       case 'endSession':
         return ok(await endSession(event, OPENID))
       case 'listYearSettlements':
