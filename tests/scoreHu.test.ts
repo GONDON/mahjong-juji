@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
+import type { HouseRules } from '../miniprogram/domain/houseRules'
 import { scoreHu } from '../miniprogram/domain/scoreHu'
 import type { TableState } from '../miniprogram/domain/types'
+
+const none: HouseRules = { zimoFan: 'none' }
+const plus: HouseRules = { zimoFan: 'plusOne' }
 
 function table(partial?: Partial<TableState>): TableState {
   return {
@@ -27,7 +31,7 @@ describe('scoreHu', () => {
       genCount: 0,
       mingGang: 0,
       anGang: 0,
-    })
+    }, none)
     expect(r.perPayer).toBe(1)
     expect(r.transfers).toEqual([
       { fromId: 'c', toId: 'b', chips: 1, reason: 'fee' },
@@ -43,7 +47,7 @@ describe('scoreHu', () => {
       genCount: 0,
       mingGang: 0,
       anGang: 0,
-    })
+    }, none)
     expect(r.dealerMult).toBe(2)
     expect(r.perPayer).toBe(4)
     expect(r.transfers).toHaveLength(3)
@@ -59,7 +63,7 @@ describe('scoreHu', () => {
       genCount: 0,
       mingGang: 1,
       anGang: 0,
-    })
+    }, none)
     expect(r.dealerMult).toBe(4)
     expect(r.fanPart).toBe(16)
     expect(r.gangPart).toBe(1)
@@ -76,8 +80,83 @@ describe('scoreHu', () => {
       genCount: 0,
       mingGang: 0,
       anGang: 1,
-    })
+    }, none)
     expect(r.perPayer).toBe(3)
+    expect(r.fanPart).toBe(1)
+    expect(r.gangPart).toBe(2)
     expect(r.transfers[0].chips).toBe(3)
+  })
+
+  it('non-dealer longqidui dianpao is 16 even with one gen', () => {
+    const r = scoreHu(table(), {
+      winnerId: 'b',
+      winType: 'dianpao',
+      dianpaoId: 'c',
+      basicFan: 'longqidui',
+      extras: [],
+      genCount: 1,
+      mingGang: 0,
+      anGang: 0,
+    }, none)
+    expect(r.fanPart).toBe(16)
+    expect(r.perPayer).toBe(16)
+  })
+
+  it('non-dealer pinghu zimo plusOne: each pays 2', () => {
+    const r = scoreHu(table(), {
+      winnerId: 'b',
+      winType: 'zimo',
+      basicFan: 'pinghu',
+      extras: [],
+      genCount: 0,
+      mingGang: 0,
+      anGang: 0,
+    }, plus)
+    expect(r.fanPart).toBe(2)
+    expect(r.perPayer).toBe(2)
+    expect(r.transfers).toHaveLength(3)
+  })
+
+  it('non-dealer duidui zimo plusOne: each pays 4', () => {
+    const r = scoreHu(table(), {
+      winnerId: 'b',
+      winType: 'zimo',
+      basicFan: 'duidui',
+      extras: [],
+      genCount: 0,
+      mingGang: 0,
+      anGang: 0,
+    }, plus)
+    expect(r.fanPart).toBe(4)
+    expect(r.perPayer).toBe(4)
+  })
+
+  it('duidui dianpao plusOne still pays 2', () => {
+    const r = scoreHu(table(), {
+      winnerId: 'b',
+      winType: 'dianpao',
+      dianpaoId: 'c',
+      basicFan: 'duidui',
+      extras: [],
+      genCount: 0,
+      mingGang: 0,
+      anGang: 0,
+    }, plus)
+    expect(r.perPayer).toBe(2)
+    expect(r.transfers).toHaveLength(1)
+  })
+
+  it('pinghu gangshanghua zimo plusOne is 4', () => {
+    const r = scoreHu(table(), {
+      winnerId: 'b',
+      winType: 'zimo',
+      basicFan: 'pinghu',
+      extras: ['gangshanghua'],
+      genCount: 0,
+      mingGang: 0,
+      anGang: 0,
+    }, plus)
+    expect(r.fanPart).toBe(4)
+    expect(r.perPayer).toBe(4)
   })
 })

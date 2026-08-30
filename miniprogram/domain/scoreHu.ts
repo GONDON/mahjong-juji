@@ -1,12 +1,21 @@
 import { fanProduct } from './fans'
+import type { HouseRules } from './houseRules'
 import type { HuInput, ScoreHuResult, TableState, Transfer } from './types'
 
-export function scoreHu(table: TableState, input: HuInput): ScoreHuResult {
+export function scoreHu(
+  table: TableState,
+  input: HuInput,
+  houseRules: HouseRules,
+): ScoreHuResult {
   const { dealer } = table
   const dealerMult =
     input.winnerId === dealer.dealerId ? 2 + dealer.streak : 1
+  const zimoMult =
+    input.winType === 'zimo' && houseRules.zimoFan === 'plusOne' ? 2 : 1
   const fanPart =
-    fanProduct(input.basicFan, input.extras, input.genCount) * dealerMult
+    fanProduct(input.basicFan, input.extras, input.genCount) *
+    zimoMult *
+    dealerMult
   const gangPart = input.mingGang * 1 + input.anGang * 2
   const perPayer = fanPart + gangPart
 
