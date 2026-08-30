@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>胡牌动效草稿 · 麻将局记</title>
+  <style>
+    :root {
+      --paper: #fffefc;
+      --panel: #ffffff;
+      --ink: #1c1917;
+      --muted: #5c574f;
+      --on-fill: #ffffff;
+      --peach: #f9c9b6;
+      --peach-wash: #fde8dc;
+      --dealer: #d4a017;
+      --gain: #2f7d4a;
+      --loss: #c45c4a;
+      --mask: rgba(28, 25, 23, 0.45);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --studio: #e8e4de;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--studio);
+      color: var(--ink);
+    }
+
+    .studio {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px 40px;
+      gap: 18px;
+    }
+
+    .lede {
+      width: min(390px, 100%);
+    }
+    .lede h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.3;
+    }
+    .lede p {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .kinds {
+      width: min(390px, 100%);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .kind {
+      height: 36px;
+      padding: 0 12px;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      font: 600 13px/32px "PingFang SC", sans-serif;
+      cursor: pointer;
+    }
+    .kind[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--on-fill);
+    }
+    .kind:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .phone {
+      width: min(390px, 100%);
+      height: 760px;
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      color: var(--ink);
+    }
+
+    .battle {
+      height: 100%;
+      padding: 14px 16px 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar-main { display: block; font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .topbar-sub { display: block; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+
+    .faces { display: flex; gap: 6px; margin-bottom: 8px; }
+    .mini-face {
+      width: 28px; height: 28px;
+      border: 3px solid var(--ink);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .table {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+    }
+    .seat {
+      position: relative;
+      background: var(--panel);
+      border: 3px solid var(--ink);
+      border-radius: 8px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .seat--top, .seat--bottom { width: 70%; align-self: center; }
+    .seat-mid { display: flex; gap: 8px; align-items: stretch; }
+    .seat--side { width: 108px; }
+    .table-center {
+      flex: 1;
+      min-height: 72px;
+      border: 2px dashed var(--ink);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 12px;
+      background: var(--panel);
+    }
+    .seat-pos { font-size: 11px; color: var(--muted); }
+    .seat-name { font-size: 13px; font-weight: 600; }
+    .seat-chips { font-size: 28px; font-weight: 700; line-height: 1.1; }
+    .seat-dealer {
+      position: absolute;
+      top: 6px; right: 6px;
+      background: var(--dealer);
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 8px;
+    }
+    .seat-face {
+      width: 36px; height: 36px;
+      border: 3px solid var(--ink);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .bottombar {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .bar {
+      flex: 1;
+      height: 40px;
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      background: var(--panel);
+      font: 700 12px/36px "PingFang SC", sans-serif;
+      text-align: center;
+    }
+
+    .fx {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      background: var(--mask);
+      opacity: 0;
+    }
+    .fx.is-on { animation: mask-in 180ms var(--ease) both; }
+    .stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .tiles { display: flex; align-items: flex-end; gap: 8px; }
+    .tile {
+      width: 52px;
+      height: 80px;
+      opacity: 0;
+    }
+    .fx.is-on .tile { animation: tile-deal 320ms var(--ease) both; }
+    .fx.is-on .tile:nth-child(1) { animation-delay: 80ms; }
+    .fx.is-on .tile:nth-child(2) { animation-delay: 150ms; }
+    .fx.is-on .tile:nth-child(3) { animation-delay: 220ms; }
+    .fx.is-on .tile:nth-child(4) { animation-delay: 290ms; }
+
+    .stack { position: relative; width: 64px; height: 108px; }
+    .stack .tile {
+      position: absolute;
+      left: 6px;
+    }
+    .stack .tile:nth-child(1) { bottom: 0; }
+    .stack .tile:nth-child(2) { bottom: 8px; }
+    .stack .tile:nth-child(3) { bottom: 16px; }
+    .stack .tile:nth-child(4) { bottom: 24px; }
+
+    .hook-wrap {
+      position: relative;
+      width: 168px;
+      height: 128px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hook-wrap .tile { position: relative; z-index: 1; }
+    .hook {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+    }
+    .hook-stroke {
+      fill: none;
+      stroke: var(--ink);
+      stroke-width: 5.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+    }
+    .fx.is-on .hook-stroke {
+      animation: draw-hook 520ms var(--ease) 180ms both;
+    }
+
+    .stamp-wrap { position: relative; }
+    .stamp {
+      min-width: 132px;
+      height: 52px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--ink);
+      color: var(--on-fill);
+      border: 3px solid var(--ink);
+      border-radius: 8px;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      transform: rotate(-8deg);
+      opacity: 0;
+    }
+    .fx.is-on .stamp { animation: stamp-hit 380ms var(--ease) 420ms both; }
+    .fx.kind-gang .stamp { animation-delay: 480ms; }
+    .fx.kind-hook .stamp { animation-delay: 560ms; }
+    .fx.kind-hu .stamp { animation-delay: 280ms; }
+
+    .ticks span {
+      position: absolute;
+      width: 3px;
+      height: 12px;
+      background: var(--ink);
+      border-radius: 2px;
+      opacity: 0;
+    }
+    .fx.is-on .ticks span { animation: tick 280ms var(--ease) 520ms both; }
+    .ticks span:nth-child(1) { top: -14px; left: 50%; }
+    .ticks span:nth-child(2) { right: -12px; top: 50%; transform: rotate(90deg); }
+    .ticks span:nth-child(3) { bottom: -14px; left: 50%; }
+    .ticks span:nth-child(4) { left: -12px; top: 50%; transform: rotate(90deg); }
+
+    .win-face {
+      width: 88px;
+      height: 88px;
+      border: 3px solid var(--ink);
+      border-radius: 8px;
+      background: var(--panel);
+      opacity: 0;
+    }
+    .fx.is-on .win-face { animation: tile-deal 320ms var(--ease) 80ms both; }
+    .gain {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gain);
+      letter-spacing: 0.02em;
+      opacity: 0;
+    }
+    .fx.is-on .gain { animation: tile-deal 280ms var(--ease) 520ms both; }
+
+    .replay {
+      width: min(390px, 100%);
+      height: 52px;
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      background: var(--ink);
+      color: var(--on-fill);
+      font: 700 16px/46px "PingFang SC", sans-serif;
+      cursor: pointer;
+    }
+    .replay:active { opacity: 0.86; }
+    .replay:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    @keyframes mask-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes tile-deal {
+      from { opacity: 0; transform: translateY(14px) scale(0.92); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes stamp-hit {
+      from { opacity: 0; transform: rotate(-8deg) scale(1.28); }
+      to { opacity: 1; transform: rotate(-8deg) scale(1); }
+    }
+    @keyframes draw-hook {
+      from { stroke-dashoffset: 220; }
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes tick {
+      from { opacity: 0; transform: scale(0.4); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fx.is-on,
+      .fx.is-on .tile,
+      .fx.is-on .stamp,
+      .fx.is-on .hook-stroke,
+      .fx.is-on .ticks span,
+      .fx.is-on .win-face,
+      .fx.is-on .gain {
+        animation: none !important;
+        opacity: 1;
+      }
+      .hook-stroke { stroke-dashoffset: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="studio">
+    <div class="lede">
+      <h1>胡牌动效草稿</h1>
+      <p>赢的人全屏看一次，约 1 秒。别人只看牌数跳。点芯片切换，点重播再看。</p>
+    </div>
+
+    <div class="kinds" role="tablist">
+      <button class="kind" data-kind="qing" aria-pressed="true">清一色</button>
+      <button class="kind" data-kind="hook" aria-pressed="false">金钩钩</button>
+      <button class="kind" data-kind="gang" aria-pressed="false">杠</button>
+      <button class="kind" data-kind="hu" aria-pressed="false">胡了</button>
+    </div>
+
+    <div class="phone" id="phone">
+      <div class="battle" aria-hidden="true">
+        <span class="topbar-main">庄 阿强  连×1  倍率×2</span>
+        <span class="topbar-sub">第1轮  第3局  A3K9</span>
+        <div class="faces">
+          <svg class="mini-face" viewBox="0 0 36 36"><circle cx="18" cy="18" r="10" fill="#f9c9b6" stroke="#1c1917" stroke-width="2.5"/><circle cx="14" cy="16" r="1.6" fill="#1c1917"/><circle cx="22" cy="16" r="1.6" fill="#1c1917"/><path d="M14 22c2 2.4 6 2.4 8 0" fill="none" stroke="#1c1917" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="mini-face" viewBox="0 0 36 36"><circle cx="18" cy="18" r="10" fill="#f9c9b6" stroke="#1c1917" stroke-width="2.5"/><circle cx="14" cy="16" r="1.6" fill="#1c1917"/><circle cx="22" cy="16" r="1.6" fill="#1c1917"/><path d="M14 21.5h8" fill="none" stroke="#1c1917" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="mini-face" viewBox="0 0 36 36"><circle cx="18" cy="18" r="10" fill="#f9c9b6" stroke="#1c1917" stroke-width="2.5"/><circle cx="14" cy="16" r="1.6" fill="#1c1917"/><circle cx="22" cy="16" r="1.6" fill="#1c1917"/><path d="M14 23c2-2 6-2 8 0" fill="none" stroke="#1c1917" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="table">
+          <div class="seat seat--top">
+            <span class="seat-pos">上</span>
+            <svg class="seat-face" viewBox="0 0 36 36"><circle cx="18" cy="18" r="10" fill="#f9c9b6" stroke="#1c1917" stroke-width="2.5"/><circle cx="14" cy="16" r="1.6" fill="#1c1917"/><circle cx="22" cy="16" r="1.6" fill="#1c1917"/><path d="M14 22c2 2.4 6 2.4 8 0" fill="none" stroke="#1c1917" stroke-width="2" stroke-linecap="round"/></svg>
+            <span class="seat-name">小周</span>
+            <span class="seat-chips">8</span>
+          </div>
+          <div class="seat-mid">
+            <div class="seat seat--side">
+              <span class="seat-pos">左</span>
+              <span class="seat-name">老陈</span>
+              <span class="seat-chips">12</span>
+            </div>
+            <div class="table-center">点座位录胡</div>
+            <div class="seat seat--side">
+              <span class="seat-pos">右</span>
+              <span class="seat-name">阿梅</span>
+              <span class="seat-chips">6</span>
+            </div>
+          </div>
+          <div class="seat seat--bottom">
+            <span class="seat-dealer">庄</span>
+            <span class="seat-pos">下</span>
+            <svg class="seat-face" viewBox="0 0 36 36"><circle cx="18" cy="18" r="10" fill="#f9c9b6" stroke="#1c1917" stroke-width="2.5"/><circle cx="14" cy="16" r="1.6" fill="#1c1917"/><circle cx="22" cy="16" r="1.6" fill="#1c1917"/><path d="M14 22c2 2.4 6 2.4 8 0" fill="none" stroke="#1c1917" stroke-width="2" stroke-linecap="round"/></svg>
+            <span class="seat-name">阿强</span>
+            <span class="seat-chips">20</span>
+          </div>
+        </div>
+        <div class="bottombar">
+          <div class="bar">流局</div>
+          <div class="bar">本轮结清</div>
+          <div class="bar">撤销上一胡</div>
+        </div>
+      </div>
+      <div class="fx kind-qing is-on" id="fx"></div>
+    </div>
+
+    <button class="replay" type="button" id="replay">再看一次</button>
+  </div>
+
+  <script>
+    const TILE = `
+      <svg class="tile" viewBox="0 0 52 80" aria-hidden="true">
+        <rect x="3" y="3" width="46" height="74" rx="8" fill="#fffefc" stroke="#1c1917" stroke-width="3.5"/>
+        <circle cx="26" cy="28" r="10" fill="none" stroke="#1c1917" stroke-width="3.5"/>
+        <circle cx="26" cy="28" r="3" fill="#1c1917"/>
+        <path d="M14 50h24" stroke="#1c1917" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M18 62h16" stroke="#1c1917" stroke-width="3.5" stroke-linecap="round"/>
+      </svg>`
+
+    const STAMP = (label) => `
+      <div class="stamp-wrap">
+        <div class="ticks" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        <div class="stamp">${label}</div>
+      </div>`
+
+    const KINDS = {
+      qing: () => `<div class="stage"><div class="tiles">${TILE}${TILE}${TILE}</div>${STAMP('清一色')}</div>`,
+      hook: () => `
+        <div class="stage">
+          <div class="hook-wrap">
+            <svg class="hook" viewBox="0 0 168 128">
+              <path class="hook-stroke" d="M118 22c28 2 40 28 28 52-10 20-38 30-62 18"/>
+            </svg>
+            ${TILE}
+          </div>
+          ${STAMP('金钩钩')}
+        </div>`,
+      gang: () => `
+        <div class="stage">
+          <div class="stack">${TILE}${TILE}${TILE}${TILE}</div>
+          ${STAMP('杠')}
+        </div>`,
+      hu: () => `
+        <div class="stage">
+          <svg class="win-face" viewBox="0 0 88 88">
+            <rect x="4" y="4" width="80" height="80" rx="8" fill="#fffefc" stroke="#1c1917" stroke-width="3.5"/>
+            <circle cx="44" cy="42" r="22" fill="#f9c9b6" stroke="#1c1917" stroke-width="3.5"/>
+            <circle cx="36" cy="38" r="3.2" fill="#1c1917"/>
+            <circle cx="52" cy="38" r="3.2" fill="#1c1917"/>
+            <path d="M34 50c6 8 14 8 20 0" fill="none" stroke="#1c1917" stroke-width="3.2" stroke-linecap="round"/>
+          </svg>
+          ${STAMP('胡了')}
+          <div class="gain">+12</div>
+        </div>`,
+    }
+
+    const fx = document.getElementById('fx')
+    const replay = document.getElementById('replay')
+    let kind = 'qing'
+
+    function play(next) {
+      kind = next || kind
+      fx.className = 'fx'
+      fx.innerHTML = KINDS[kind]()
+      void fx.offsetWidth
+      fx.classList.add('is-on', `kind-${kind}`)
+      document.querySelectorAll('.kind').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(btn.dataset.kind === kind))
+      })
+    }
+
+    document.querySelectorAll('.kind').forEach((btn) => {
+      btn.addEventListener('click', () => play(btn.dataset.kind))
+    })
+    replay.addEventListener('click', () => play())
+    play('qing')
+  </script>
+</body>
+</html>

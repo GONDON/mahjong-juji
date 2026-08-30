@@ -22,6 +22,7 @@ const playing: RecentCampaign = {
   sessionId: 'sess_1',
   roomCode: '8K2P',
   chipValueYuan: 2,
+  startingChips: 20,
   status: 'playing',
   createdAt: 1_000,
 }
@@ -30,6 +31,7 @@ const ended: RecentCampaign = {
   sessionId: 'sess_2',
   roomCode: '4A9B',
   chipValueYuan: 5,
+  startingChips: 20,
   status: 'ended',
   createdAt: 500,
 }
@@ -132,9 +134,14 @@ describe('lobby recent campaigns', () => {
   it('presents active and finished rows for the lobby list', () => {
     expect(presentRecentCampaign(playing)).toMatchObject({
       title: '房间 8K2P',
-      meta: '底分 2',
+      meta: '底分 2 · 20牌',
       actionLabel: '再入局',
       active: true,
+    })
+    expect(
+      presentRecentCampaign({ ...playing, startingChips: 15 }),
+    ).toMatchObject({
+      meta: '底分 2 · 15牌',
     })
     expect(presentRecentCampaign(ended)).toMatchObject({
       title: '房间 4A9B',

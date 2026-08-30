@@ -9,9 +9,10 @@ export interface CycleSettlementRow {
 export function settleCycle(
   seats: Seat[],
   chipValueYuan: number,
+  startingChips = 20,
 ): CycleSettlementRow[] {
   return seats.map((s) => {
-    const chipDelta = s.chips - 20
+    const chipDelta = s.chips - startingChips
     return {
       playerId: s.playerId,
       chipDelta,

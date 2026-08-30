@@ -7,9 +7,11 @@ export type BasicFan =
   | 'duidui'
   | 'qingyise'
   | 'qidui'
+  | 'longqidui'
   | 'jingougou'
   | 'qingdui'
   | 'qingqidui'
+  | 'qinglongqidui'
   | 'qingjingougou'
 
 export type ExtraFan =

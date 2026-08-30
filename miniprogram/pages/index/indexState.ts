@@ -14,6 +14,7 @@ export type RecentCampaign = {
   sessionId: string
   roomCode: string
   chipValueYuan: number
+  startingChips: number
   status: SessionStatus
   createdAt: number
 }
@@ -95,7 +96,9 @@ export function presentRecentCampaign(
   return {
     ...campaign,
     title: `房间 ${campaign.roomCode}`,
-    meta: active ? `底分 ${campaign.chipValueYuan}` : '已结束',
+    meta: active
+      ? `底分 ${campaign.chipValueYuan} · ${campaign.startingChips}牌`
+      : '已结束',
     actionLabel: active ? '再入局' : '已结束',
     active,
   }

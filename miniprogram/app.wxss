@@ -85,6 +85,42 @@ page {
   opacity: 0.86;
 }
 
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.stepper-btn {
+  width: 80rpx;
+  height: 80rpx;
+  box-sizing: border-box;
+  border: var(--stroke-thin) solid var(--ink);
+  border-radius: var(--radius-pill);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 40rpx;
+  font-weight: 700;
+  line-height: 72rpx;
+  text-align: center;
+}
+
+.stepper-btn--pressed {
+  background: var(--peach-wash);
+}
+
+.stepper-btn--off {
+  opacity: 0.35;
+}
+
+.stepper-value {
+  flex: 1;
+  text-align: center;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .tile {
   box-sizing: border-box;
   background: var(--panel);
