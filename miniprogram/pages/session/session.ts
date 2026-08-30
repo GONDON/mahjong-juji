@@ -15,6 +15,8 @@ Page({
     sessionId: '',
     roomCode: '',
     chipValueYuan: 0,
+    startingChips: 0,
+    zimoFanLabel: '',
     status: '',
     statusLabel: '',
     ended: false,

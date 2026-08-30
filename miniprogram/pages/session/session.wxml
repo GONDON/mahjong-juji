@@ -6,7 +6,7 @@
         <text class="room">{{roomCode}}</text>
         <text class="status">{{statusLabel}}</text>
       </view>
-      <text class="meta">面值 {{chipValueYuan}} 元/牌</text>
+      <text class="meta">面值 {{chipValueYuan}} 元/牌 · 入局 {{startingChips}} · {{zimoFanLabel}}</text>
     </view>
 
     <view wx:if="{{cycles.length === 0}}" class="empty-state">

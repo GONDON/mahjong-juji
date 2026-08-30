@@ -1,4 +1,6 @@
 import { avatarSrc } from '../../domain/character'
+import { readHouseRules, zimoFanLabel } from '../../domain/houseRules'
+import { readStartingChips } from '../../domain/startingChips'
 import type { BasicFan } from '../../domain/types'
 import type { SessionDoc, SessionStatus } from '../../services/sessionApi'
 
@@ -14,10 +16,40 @@ const BASIC_FAN_LABEL: Record<BasicFan, string> = {
   duidui: '对对胡',
   qingyise: '清一色',
   qidui: '七对',
+  longqidui: '龙七对',
   jingougou: '金钩钩',
   qingdui: '清对',
   qingqidui: '清七对',
+  qinglongqidui: '清龙七对',
   qingjingougou: '清金钩钩',
+}
+
+const EXTRA_FAN_LABEL: Record<string, string> = {
+  gangshanghua: '杠上花',
+  gangshangpao: '杠上炮',
+  qianggang: '抢杠',
+  haidi: '海底',
+  menqing: '门清',
+  zhongzhang: '中张',
+  daiyaojiu: '带幺九',
+  jiangdui: '将对',
+  tianhu: '天胡',
+  dihu: '地胡',
+}
+
+function fanPhrase(
+  basicFan: BasicFan,
+  extras: string[] = [],
+  genCount = 0,
+): string {
+  const parts = [BASIC_FAN_LABEL[basicFan] || basicFan]
+  for (const e of extras) {
+    if (e === 'gen') continue
+    const label = EXTRA_FAN_LABEL[e]
+    if (label) parts.push(label)
+  }
+  if (genCount > 0) parts.push(`${genCount}根`)
+  return parts.join(' ')
 }
 
 export type SessionSettleView = {
@@ -59,6 +91,8 @@ export type SessionCycleView = {
 export type SessionDetailView = {
   roomCode: string
   chipValueYuan: number
+  startingChips: number
+  zimoFanLabel: string
   status: SessionStatus | ''
   statusLabel: string
   ended: boolean
@@ -99,7 +133,11 @@ function buildCycles(
       .map((e) => {
         const winner = nicks[e.input.winnerId] || e.input.winnerId
         const winType = e.input.winType === 'zimo' ? '自摸' : '点炮'
-        const fan = BASIC_FAN_LABEL[e.input.basicFan] || e.input.basicFan
+        const fan = fanPhrase(
+          e.input.basicFan,
+          e.input.extras,
+          e.input.genCount,
+        )
         return {
           handIndex: e.handIndex,
           winner,
@@ -151,6 +189,8 @@ export function presentSession(
   return {
     roomCode: doc.roomCode,
     chipValueYuan: doc.chipValueYuan,
+    startingChips: readStartingChips(doc.startingChips),
+    zimoFanLabel: zimoFanLabel(readHouseRules(doc.houseRules).zimoFan),
     status: doc.status,
     statusLabel: STATUS_LABEL[doc.status] || doc.status,
     ended: doc.status === 'ended',

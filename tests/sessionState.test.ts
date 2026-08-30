@@ -76,6 +76,7 @@ describe('presentSession', () => {
     const view = presentSession(doc())
     expect(view.roomCode).toBe('UCWJ')
     expect(view.chipValueYuan).toBe(1)
+    expect(view.startingChips).toBe(20)
     expect(view.statusLabel).toBe('已结束')
     expect(view.ended).toBe(true)
     expect(view.canEnd).toBe(false)
@@ -91,6 +92,18 @@ describe('presentSession', () => {
       faceSrc: '/assets/avatars/avatar_04.png',
     })
     expect(view.cycles[0].settlements[0].yuanClass).toBe('down')
+  })
+
+  it('surfaces startingChips from the session, defaulting missing to 20', () => {
+    expect(presentSession(doc({ startingChips: 30 })).startingChips).toBe(30)
+    expect(presentSession(doc()).startingChips).toBe(20)
+  })
+
+  it('surfaces zimoFanLabel, defaulting missing houseRules to 不加番', () => {
+    expect(presentSession(doc()).zimoFanLabel).toBe('自摸不加番')
+    expect(
+      presentSession(doc({ houseRules: { zimoFan: 'plusOne' } })).zimoFanLabel,
+    ).toBe('自摸加一番')
   })
 
   it('keeps a wash yuan in ink, not loss red', () => {
@@ -151,6 +164,25 @@ describe('presentSession', () => {
     expect(liuju.cycles[0].hands[0].title).toBe('第 1 局  庄 东（连1）')
     expect(liuju.cycles[0].hands[0].hus).toEqual([])
     expect(liuju.cycles[0].hands[0].liuju).toBe(true)
+  })
+
+  it('includes extras and gens in the hu line', () => {
+    const withFan = doc({
+      huEvents: [
+        {
+          ...doc().huEvents[0],
+          input: {
+            ...doc().huEvents[0].input,
+            basicFan: 'duidui',
+            extras: ['jiangdui'],
+            genCount: 1,
+          },
+        },
+      ],
+    })
+    expect(presentSession(withFan).cycles[0].hands[0].hus[0].line).toBe(
+      '北 自摸 对对胡 将对 1根',
+    )
   })
 
   it('allows ending only when the session is settled with no current cycle', () => {
