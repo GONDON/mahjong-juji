@@ -150,10 +150,30 @@ describe('listMySessions', () => {
       sessionId: 'sess_x',
       roomCode: '8K2P',
       chipValueYuan: 2,
+      startingChips: 20,
       status: 'open',
       createdAt: 10,
     })
     expect(toSessionSummary({ roomCode: '8K2P' })).toBeNull()
+  })
+
+  it('coerces Date createdAt from the cloud SDK', () => {
+    expect(
+      toSessionSummary({
+        sessionId: 'sess_x',
+        roomCode: '8K2P',
+        chipValueYuan: 2,
+        status: 'ended',
+        createdAt: new Date(1_700_000_000_000),
+      }),
+    ).toEqual({
+      sessionId: 'sess_x',
+      roomCode: '8K2P',
+      chipValueYuan: 2,
+      startingChips: 20,
+      status: 'ended',
+      createdAt: 1_700_000_000_000,
+    })
   })
 
   it('returns only rooms the actor joined, newest first, capped', async () => {
@@ -185,5 +205,73 @@ describe('listMySessions', () => {
     expect(capped).toHaveLength(1)
     expect(capped[0].sessionId).toBe(b.sessionId)
     expect(LIST_MY_SESSIONS_MAX).toBe(50)
+  })
+})
+
+describe('startingChips on session', () => {
+  beforeEach(() => {
+    __resetMockSessions()
+  })
+
+  it('stores startingChips, deals them, and settles against them', async () => {
+    const { sessionId } = await createSession({
+      chipValueYuan: 2,
+      startingChips: 15,
+      nicknames: ['A', 'B', 'C', 'D'],
+    })
+    const opened = await getSession(sessionId)
+    expect(opened.startingChips).toBe(15)
+    const idA = opened.seats[0].playerId
+    await startCycle(sessionId, idA)
+    const playing = await getSession(sessionId)
+    expect(playing.seats.every((s) => s.chips === 15)).toBe(true)
+    const rows = await settleCycleManual(sessionId)
+    expect(rows.every((r) => r.chipDelta === 0 && r.yuan === 0)).toBe(true)
+  })
+
+  it('rejects illegal startingChips on create', async () => {
+    await expect(
+      createSession({
+        chipValueYuan: 1,
+        startingChips: 11,
+        nicknames: ['A', 'B', 'C', 'D'],
+      }),
+    ).rejects.toThrow(/startingChips/)
+  })
+})
+
+describe('houseRules on session', () => {
+  beforeEach(() => {
+    __resetMockSessions()
+  })
+
+  it('stores plusOne by default and scores zimo with it', async () => {
+    const { sessionId } = await createSession({
+      chipValueYuan: 1,
+      nicknames: ['东', '南', '西', '北'],
+    })
+    const opened = await getSession(sessionId)
+    expect(opened.houseRules).toEqual({ zimoFan: 'plusOne' })
+    await startCycle(sessionId, opened.seats[0].playerId)
+    const r = await appendHu(sessionId, {
+      winnerId: opened.seats[1].playerId,
+      winType: 'zimo',
+      basicFan: 'pinghu',
+      extras: [],
+      genCount: 0,
+      mingGang: 0,
+      anGang: 0,
+    })
+    expect(r.score.perPayer).toBe(2)
+  })
+
+  it('rejects illegal houseRules on create', async () => {
+    await expect(
+      createSession({
+        chipValueYuan: 1,
+        nicknames: ['东', '南', '西', '北'],
+        houseRules: { zimoFan: 'timesThree' } as never,
+      }),
+    ).rejects.toThrow(/houseRules/)
   })
 })

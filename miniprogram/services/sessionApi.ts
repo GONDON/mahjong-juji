@@ -4,12 +4,12 @@
  * Cloud (USE_MOCK=false): writes and most reads go through
  *   wx.cloud.callFunction({ name: 'sessionWrite', data: { action, ... } })
  * so scorer checks stay server-side. See docs/cloud-setup.md.
- * `listMySessions` is a client read of `sessions` filtered by
- * `memberOpenIds`; it does not go through `sessionWrite`. Room-code
- * lookup still does.
+ * `listMySessions` goes through `sessionWrite` (same as getSession). It does
+ * not query `sessions` from the client. Room-code lookup also stays on
+ * `sessionWrite`.
  *
  * Collections (denormalized `sessions` docs in MVP cloud stub):
- * - sessions: _id, roomCode, chipValueYuan, scorerOpenId/scorerId,
+ * - sessions: _id, roomCode, chipValueYuan, startingChips, scorerOpenId/scorerId,
  *   seats[{playerId,nickname,openId?}], status, circleId?, createdAt
  * - cycles / hands / huEvents nested on the session doc (mock + cloud stub)
  *
@@ -36,6 +36,15 @@ import {
   type SessionMember,
 } from '../domain/presence'
 import { settleCycle, type CycleSettlementRow } from '../domain/settleCycle'
+import {
+  readHouseRules,
+  requireHouseRules,
+  type HouseRules,
+} from '../domain/houseRules'
+import {
+  readStartingChips,
+  requireStartingChips,
+} from '../domain/startingChips'
 import type {
   DealerState,
   HuInput,
@@ -84,6 +93,7 @@ export type SessionSummary = {
   sessionId: string
   roomCode: string
   chipValueYuan: number
+  startingChips: number
   status: SessionStatus
   createdAt: number
 }
@@ -106,11 +116,12 @@ export function toSessionSummary(
       : typeof raw._id === 'string'
         ? raw._id
         : ''
+  const createdAt = createdAtMs(raw.createdAt)
   if (
     !sessionId ||
     typeof raw.roomCode !== 'string' ||
     typeof raw.chipValueYuan !== 'number' ||
-    typeof raw.createdAt !== 'number' ||
+    createdAt == null ||
     !isSessionStatus(raw.status)
   ) {
     return null
@@ -119,9 +130,19 @@ export function toSessionSummary(
     sessionId,
     roomCode: raw.roomCode,
     chipValueYuan: raw.chipValueYuan,
+    startingChips: readStartingChips(raw.startingChips),
     status: raw.status,
-    createdAt: raw.createdAt,
+    createdAt,
   }
+}
+
+function createdAtMs(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (value instanceof Date) {
+    const ms = value.getTime()
+    return Number.isNaN(ms) ? null : ms
+  }
+  return null
 }
 
 export interface SessionSeat {
@@ -171,6 +192,8 @@ export interface SessionDoc {
   sessionId: string
   roomCode: string
   chipValueYuan: number
+  startingChips?: number
+  houseRules?: HouseRules
   /** Mock always uses MOCK_SCORER_ID; cloud uses OPENID. */
   scorerId: string
   /** Present on cloud sessions; mock may omit. */
@@ -319,7 +342,11 @@ function applyTable(doc: SessionDoc, table: TableState): void {
 function settleCurrent(entry: MockEntry): SessionSettlementRow[] {
   const { doc } = entry
   if (!doc.currentCycle) throw new Error('no active cycle to settle')
-  const settlements = settleCycle(doc.seats, doc.chipValueYuan).map((row, i) => ({
+  const settlements = settleCycle(
+    doc.seats,
+    doc.chipValueYuan,
+    readStartingChips(doc.startingChips),
+  ).map((row, i) => ({
     ...row,
     openId: doc.seats[i]?.claimedOpenId ?? null,
     nickname: doc.seats[i]?.nickname ?? row.playerId,
@@ -356,28 +383,13 @@ export async function listMySessions(opts?: {
 }): Promise<SessionSummary[]> {
   const limit = clampListLimit(opts?.limit)
   if (!USE_MOCK) {
-    const { openId } = await whoami()
-    if (typeof wx === 'undefined' || !wx.cloud || !wx.cloud.database) {
-      throw new Error('cloud database unavailable')
-    }
-    const res = await wx.cloud
-      .database()
-      .collection('sessions')
-      .where({ memberOpenIds: openId })
-      .field({
-        sessionId: true,
-        roomCode: true,
-        chipValueYuan: true,
-        status: true,
-        createdAt: true,
-      })
-      .orderBy('createdAt', 'desc')
-      .limit(limit)
-      .get()
-    const rows = (res && res.data) || []
-    return rows
-      .map((raw: Record<string, unknown>) => toSessionSummary(raw))
-      .filter((row: SessionSummary | null): row is SessionSummary => row !== null)
+    const rows = await callSessionWrite<Record<string, unknown>[]>(
+      'listMySessions',
+      { limit },
+    )
+    return (rows || [])
+      .map((raw) => toSessionSummary(raw))
+      .filter((row): row is SessionSummary => row !== null)
   }
   return [...mockStore.values()]
     .map((entry) => entry.doc)
@@ -390,10 +402,18 @@ export async function listMySessions(opts?: {
 
 export async function createSession(input: {
   chipValueYuan: number
+  startingChips?: number
+  houseRules?: HouseRules
   nicknames: [string, string, string, string]
 }): Promise<{ sessionId: string; roomCode: string }> {
+  const startingChips = requireStartingChips(input.startingChips)
+  const houseRules = requireHouseRules(input.houseRules)
   if (!USE_MOCK) {
-    return callSessionWrite('createSession', { ...input })
+    return callSessionWrite('createSession', {
+      ...input,
+      startingChips,
+      houseRules,
+    })
   }
 
   const sessionId = nextId('sess')
@@ -417,6 +437,8 @@ export async function createSession(input: {
     sessionId,
     roomCode,
     chipValueYuan: input.chipValueYuan,
+    startingChips,
+    houseRules,
     scorerId: MOCK_SCORER_ID,
     scorerOpenId: MOCK_SCORER_ID,
     seats,
@@ -469,7 +491,7 @@ export async function startCycle(
   const dealer = freshDealer(dealerId)
   const seats = doc.seats.map((s) => ({
     ...s,
-    chips: 20,
+    chips: readStartingChips(doc.startingChips),
     hasHu: false,
   }))
   const cycleIndex = doc.cycles.length + 1
@@ -510,7 +532,7 @@ export async function appendHu(
   const before = tableFrom(doc)
   entry.undoStack.push(before)
 
-  const result = commitHu(before, input)
+  const result = commitHu(before, input, readHouseRules(doc.houseRules))
   applyTable(doc, result.table)
 
   const hand = doc.hands[doc.hands.length - 1]

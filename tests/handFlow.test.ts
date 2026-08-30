@@ -31,7 +31,7 @@ describe('handFlow', () => {
       genCount: 0,
       mingGang: 0,
       anGang: 0,
-    })
+    }, { zimoFan: 'none' })
     const next = openNextHand(afterHu)
     expect(next.dealer).toEqual({ dealerId: 'b', streak: 0 })
     expect(next.firstHuId).toBeNull()
@@ -53,7 +53,7 @@ describe('handFlow', () => {
       genCount: 0,
       mingGang: 0,
       anGang: 0,
-    })
+    }, { zimoFan: 'none' })
     expect(r.table.seats.find((s) => s.playerId === 'b')!.hasHu).toBe(true)
     expect(r.table.firstHuId).toBe('b')
     expect(r.table.seats.find((s) => s.playerId === 'c')!.chips).toBe(19)
@@ -78,7 +78,7 @@ describe('handFlow', () => {
       genCount: 0,
       mingGang: 0,
       anGang: 0,
-    })
+    }, { zimoFan: 'none' })
     expect(r.cycleOver).toBe(true)
     expect(r.bankruptIds).toEqual(['c'])
     expect(r.score.bankruptTriggered).toBe(true)

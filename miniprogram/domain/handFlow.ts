@@ -1,5 +1,6 @@
 import { applyTransfers } from './chips'
 import { afterHand } from './dealer'
+import type { HouseRules } from './houseRules'
 import { scoreHu } from './scoreHu'
 import type {
   DealerState,
@@ -13,6 +14,7 @@ import type {
 export function commitHu(
   table: TableState,
   input: HuInput,
+  houseRules: HouseRules,
 ): {
   table: TableState
   score: ScoreHuResult
@@ -20,7 +22,7 @@ export function commitHu(
   bankruptIds: PlayerId[]
   cycleOver: boolean
 } {
-  const score = scoreHu(table, input)
+  const score = scoreHu(table, input, houseRules)
   const applied = applyTransfers(table.seats, score.transfers)
   const seats = applied.seats.map((s) =>
     s.playerId === input.winnerId ? { ...s, hasHu: true } : s,
