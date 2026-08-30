@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { readHouseRules } from '../../domain/houseRules'
 import type { CycleSettlementRow } from '../../domain/settleCycle'
 import { avatarSrc } from '../../domain/character'
 import {
@@ -67,6 +68,7 @@ Page({
     myOpenId: '',
     showHuSheet: false,
     winnerId: '',
+    houseRules: { zimoFan: 'none' },
     showSettle: false,
     settlements: [] as (CycleSettlementRow & { nickname: string })[],
   },
@@ -178,6 +180,7 @@ Page({
       canUndo: canUndoFrom(doc),
       isScorer: resolveIsScorer(openId, doc),
       myOpenId: openId,
+      houseRules: readHouseRules(doc.houseRules),
       showSettle: Boolean(settleRows && settleRows.length),
       settlements: (settleRows || []).map((r) => ({
         ...r,

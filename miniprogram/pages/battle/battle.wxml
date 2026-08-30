@@ -79,6 +79,7 @@
     seats="{{seats}}"
     dealerId="{{dealerId}}"
     streak="{{streak}}"
+    houseRules="{{houseRules}}"
     bind:cancel="closeHuSheet"
     bind:confirm="onHuConfirm"
   />

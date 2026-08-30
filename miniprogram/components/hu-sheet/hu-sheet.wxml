@@ -86,7 +86,7 @@
         <text class="label">应付预览</text>
         <view wx:if="{{previewHint}}" class="preview-hint">{{previewHint}}</view>
         <block wx:else>
-          <text class="preview-summary">每人 {{previewPerPayer}} 牌（番 {{previewFanPart}} + 杠 {{previewGangPart}}  庄倍×{{previewDealerMult}}）</text>
+          <text class="preview-summary">每人 {{previewPerPayer}} 牌（番 {{previewFanPart}} + 杠 {{previewGangPart}}  庄倍×{{previewDealerMult}}<block wx:if="{{previewZimoMult === 2}}"> 自摸×2</block>）</text>
           <view wx:for="{{previewLines}}" wx:key="index" class="preview-line">
             <text>{{item.from}} → {{item.to}}：{{item.chips}}</text>
           </view>

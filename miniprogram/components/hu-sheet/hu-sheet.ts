@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { readHouseRules } from '../../domain/houseRules'
 import { scoreHu } from '../../domain/scoreHu'
 import type {
   BasicFan,
@@ -14,9 +15,11 @@ const BASIC_FANS: { id: BasicFan; label: string }[] = [
   { id: 'duidui', label: '对对胡' },
   { id: 'qingyise', label: '清一色' },
   { id: 'qidui', label: '七对' },
+  { id: 'longqidui', label: '龙七对' },
   { id: 'jingougou', label: '金钩钩' },
   { id: 'qingdui', label: '清对' },
   { id: 'qingqidui', label: '清七对' },
+  { id: 'qinglongqidui', label: '清龙七对' },
   { id: 'qingjingougou', label: '清金钩钩' },
 ]
 
@@ -26,6 +29,11 @@ const EXTRA_TOGGLES: { id: ExtraFan; label: string }[] = [
   { id: 'qianggang', label: '抢杠' },
   { id: 'haidi', label: '海底' },
   { id: 'menqing', label: '门清' },
+  { id: 'zhongzhang', label: '中张' },
+  { id: 'daiyaojiu', label: '带幺九' },
+  { id: 'jiangdui', label: '将对' },
+  { id: 'tianhu', label: '天胡' },
+  { id: 'dihu', label: '地胡' },
 ]
 
 function emptyForm() {
@@ -39,6 +47,11 @@ function emptyForm() {
       qianggang: false,
       haidi: false,
       menqing: false,
+      zhongzhang: false,
+      daiyaojiu: false,
+      jiangdui: false,
+      tianhu: false,
+      dihu: false,
     },
     genCount: 0,
     mingGang: 0,
@@ -53,6 +66,7 @@ Component({
     seats: { type: Array, value: [] },
     dealerId: { type: String, value: '' },
     streak: { type: Number, value: 0 },
+    houseRules: { type: Object, value: { zimoFan: 'none' } },
   },
 
   data: {
@@ -66,6 +80,7 @@ Component({
     previewFanPart: 0,
     previewGangPart: 0,
     previewDealerMult: 1,
+    previewZimoMult: 1,
     previewLines: [] as { from: string; to: string; chips: number }[],
     previewHint: '',
   },
@@ -76,7 +91,7 @@ Component({
         this.resetAndRefresh()
       }
     },
-    'winnerId, seats, dealerId, streak'() {
+    'winnerId, seats, dealerId, streak, houseRules'() {
       if (this.data.visible) {
         this.refreshDerived()
         this.refreshPreview()
@@ -181,6 +196,7 @@ Component({
           previewFanPart: 0,
           previewGangPart: 0,
           previewDealerMult: 1,
+          previewZimoMult: 1,
           previewLines: [],
           previewHint:
             this.data.winType === 'dianpao' ? '请选择点炮者后预览' : '',
@@ -189,13 +205,17 @@ Component({
       }
 
       try {
-        const result = scoreHu(this.buildTable(), input)
+        const houseRules = readHouseRules(this.properties.houseRules)
+        const result = scoreHu(this.buildTable(), input, houseRules)
         const nicks = this.nickMap()
+        const previewZimoMult =
+          input.winType === 'zimo' && houseRules.zimoFan === 'plusOne' ? 2 : 1
         this.setData({
           previewPerPayer: result.perPayer,
           previewFanPart: result.fanPart,
           previewGangPart: result.gangPart,
           previewDealerMult: result.dealerMult,
+          previewZimoMult,
           previewLines: result.transfers.map((t) => ({
             from: nicks[t.fromId] || t.fromId,
             to: nicks[t.toId] || t.toId,
@@ -210,6 +230,7 @@ Component({
           previewFanPart: 0,
           previewGangPart: 0,
           previewDealerMult: 1,
+          previewZimoMult: 1,
           previewLines: [],
           previewHint: '预览失败',
         })
