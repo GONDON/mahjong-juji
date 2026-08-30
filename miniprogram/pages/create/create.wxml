@@ -13,6 +13,41 @@
   </view>
 
   <view class="section">
+    <view class="label">入局牌数</view>
+    <view class="stepper">
+      <view
+        class="stepper-btn {{canDecStarting ? '' : 'stepper-btn--off'}}"
+        hover-class="{{canDecStarting ? 'stepper-btn--pressed' : ''}}"
+        data-dir="-1"
+        bindtap="onStartingStep"
+      >−</view>
+      <text class="stepper-value">{{startingChips}}</text>
+      <view
+        class="stepper-btn {{canIncStarting ? '' : 'stepper-btn--off'}}"
+        hover-class="{{canIncStarting ? 'stepper-btn--pressed' : ''}}"
+        data-dir="1"
+        bindtap="onStartingStep"
+      >+</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="label">桌规 · 自摸</view>
+    <view class="chip-row">
+      <view
+        class="chip-btn {{zimoFan === 'none' ? 'chip-btn--on' : ''}}"
+        data-value="none"
+        bindtap="onZimoFanTap"
+      >不加番</view>
+      <view
+        class="chip-btn {{zimoFan === 'plusOne' ? 'chip-btn--on' : ''}}"
+        data-value="plusOne"
+        bindtap="onZimoFanTap"
+      >加一番</view>
+    </view>
+  </view>
+
+  <view class="section">
     <view class="label">四人昵称</view>
     <view
       wx:for="{{nicknames}}"

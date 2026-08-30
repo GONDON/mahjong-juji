@@ -6,6 +6,13 @@ import {
   preferLocalCharacter,
   type CharacterCard,
 } from '../../domain/character'
+import { DEFAULT_HOUSE_RULES } from '../../domain/houseRules'
+import {
+  DEFAULT_STARTING_CHIPS,
+  STARTING_CHIPS_MAX,
+  STARTING_CHIPS_MIN,
+  stepStartingChips,
+} from '../../domain/startingChips'
 import { tablePathFor } from '../../domain/sessionRoute'
 import {
   createSession,
@@ -47,6 +54,10 @@ Page({
   data: {
     chipOptions: CHIP_OPTIONS,
     chipValueYuan: 1,
+    startingChips: DEFAULT_STARTING_CHIPS,
+    zimoFan: DEFAULT_HOUSE_RULES.zimoFan,
+    canDecStarting: DEFAULT_STARTING_CHIPS > STARTING_CHIPS_MIN,
+    canIncStarting: DEFAULT_STARTING_CHIPS < STARTING_CHIPS_MAX,
     ...presentJoinField(''),
     joinEpoch: 0,
     joining: false,
@@ -72,6 +83,23 @@ Page({
     this.setData({ chipValueYuan: next })
   },
 
+  onZimoFanTap(e: WechatMiniprogram.TouchEvent) {
+    const zimoFan = String(e.currentTarget.dataset.value)
+    if (zimoFan !== 'none' && zimoFan !== 'plusOne') return
+    this.setData({ zimoFan })
+  },
+
+  onStartingStep(e: WechatMiniprogram.TouchEvent) {
+    const dir = Number(e.currentTarget.dataset.dir)
+    if (dir !== 1 && dir !== -1) return
+    const startingChips = stepStartingChips(this.data.startingChips, dir)
+    this.setData({
+      startingChips,
+      canDecStarting: startingChips > STARTING_CHIPS_MIN,
+      canIncStarting: startingChips < STARTING_CHIPS_MAX,
+    })
+  },
+
   onJoinCodeFocus() {
     this.setData(presentJoinField(this.data.joinCode, true))
   },
@@ -92,6 +120,8 @@ Page({
     try {
       const { sessionId } = await createSession({
         chipValueYuan: this.data.chipValueYuan,
+        startingChips: this.data.startingChips,
+        houseRules: { zimoFan: this.data.zimoFan },
         nicknames: [...DEFAULT_SEAT_NICKNAMES] as [
           string,
           string,

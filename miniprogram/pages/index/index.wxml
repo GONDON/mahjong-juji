@@ -16,7 +16,7 @@
         <image class="badge" src="/assets/dice.svg" mode="aspectFit" />
         <view class="section-copy">
           <text class="section-title">快速开局</text>
-          <text class="section-sub">设好底分，邀请牌友用房间码入座</text>
+          <text class="section-sub">设好底分、牌数和桌规，邀请牌友用房间码入座</text>
         </view>
       </view>
 
@@ -32,6 +32,41 @@
               data-value="{{item}}"
               bindtap="onChipTap"
             >{{item}}</view>
+          </view>
+        </view>
+        <view class="field">
+          <text class="field-label">入局牌数</text>
+          <view class="stepper">
+            <view
+              class="stepper-btn {{canDecStarting ? '' : 'stepper-btn--off'}}"
+              hover-class="{{canDecStarting ? 'stepper-btn--pressed' : ''}}"
+              data-dir="-1"
+              bindtap="onStartingStep"
+            >−</view>
+            <text class="stepper-value">{{startingChips}}</text>
+            <view
+              class="stepper-btn {{canIncStarting ? '' : 'stepper-btn--off'}}"
+              hover-class="{{canIncStarting ? 'stepper-btn--pressed' : ''}}"
+              data-dir="1"
+              bindtap="onStartingStep"
+            >+</view>
+          </view>
+        </view>
+        <view class="field">
+          <text class="field-label">桌规 · 自摸</text>
+          <view class="chip-row">
+            <view
+              class="chip {{zimoFan === 'none' ? 'chip--on' : ''}}"
+              hover-class="chip--pressed"
+              data-value="none"
+              bindtap="onZimoFanTap"
+            >不加番</view>
+            <view
+              class="chip {{zimoFan === 'plusOne' ? 'chip--on' : ''}}"
+              hover-class="chip--pressed"
+              data-value="plusOne"
+              bindtap="onZimoFanTap"
+            >加一番</view>
           </view>
         </view>
       </view>
