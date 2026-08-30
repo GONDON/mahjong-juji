@@ -25,7 +25,7 @@ export const USE_MOCK = false                   // was true
 
 In the cloud console, create:
 
-1. **`sessions`** — denormalized session docs. Cloud function writes with the
+1. **`sessions`** — denormalized session docs (`chipValueYuan`, `startingChips`, `houseRules`, seats, cycles). Cloud function writes with the
    server SDK. Client **must not write**. Custom security rules:
 
    ```
@@ -37,14 +37,9 @@ In the cloud console, create:
 
    `memberOpenIds` is a string array kept in sync with `members[].openId`.
    Old docs without the field cannot be watched; `getSession` poll still works.
-   Client **may** list with `where({ memberOpenIds: <caller's openId> })` plus
-   `.field` / `.orderBy('createdAt', 'desc')` (homepage and 全部牌局).
-   Do **not** query by `roomCode` from the client; room-code lookup stays on
+   Homepage / 全部牌局 use `sessionWrite` action `listMySessions` (server SDK).
+   Do **not** query `sessions` from the client; room-code lookup stays on
    `sessionWrite`.
-
-   Create a composite index on `sessions`: `memberOpenIds` ascending,
-   `createdAt` descending. Without it, `orderBy` fails and the lobby shows
-   「加载失败」.
 
 2. **`users`** — character cards keyed by WeChat openId (`_id` = openId). Same
    client-write-false pattern; the cloud function uses the server-side SDK.
@@ -54,7 +49,7 @@ In the cloud console, create:
 1. In DevTools, right-click `cloudfunctions/sessionWrite` → **上传并部署：云端安装依赖**.
 2. Confirm the function appears under 云函数 and uses the same env as `CLOUD_ENV_ID`.
 
-The function routes on `action` and checks `cloud.getWXContext().OPENID` against `scorerOpenId` for scorer write actions (`startCycle`, `appendHu`, `liuju`, `undoLastHu`, `settleCycleManual`, `advanceToNextCycle`, `endSession`, `scorerUnclaimSeat`, `scorerRenameSeat`). Character / seat-claim actions (`whoami`, `getCharacter`, `upsertCharacter`, `enterSession`, `claimSeat`, `unclaimSeat`) use the caller's openId without requiring scorer.
+The function routes on `action` and checks `cloud.getWXContext().OPENID` against `scorerOpenId` for scorer write actions (`startCycle`, `appendHu`, `liuju`, `undoLastHu`, `settleCycleManual`, `advanceToNextCycle`, `endSession`, `scorerUnclaimSeat`, `scorerRenameSeat`). Character / seat-claim / list actions (`whoami`, `getCharacter`, `upsertCharacter`, `enterSession`, `claimSeat`, `unclaimSeat`, `listMySessions`) use the caller's openId without requiring scorer.
 
 ## 5. Smoke on device / DevTools
 

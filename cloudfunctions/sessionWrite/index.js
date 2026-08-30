@@ -4,7 +4,7 @@
  * Client: wx.cloud.callFunction({ name: 'sessionWrite', data: { action, ... } })
  * Actions: createSession, getSession, getSessionByRoomCode, startCycle,
  *   appendHu, liuju, undoLastHu, settleCycleManual, advanceToNextCycle, endSession,
- *   listYearSettlements,
+ *   listYearSettlements, listMySessions,
  *   whoami, getCharacter, upsertCharacter, enterSession, claimSeat, unclaimSeat,
  *   scorerUnclaimSeat, scorerRenameSeat
  *
@@ -18,6 +18,10 @@ const {
   commitHu,
   openNextHand,
   settleCycle,
+  readStartingChips,
+  requireStartingChips,
+  readHouseRules,
+  requireHouseRules,
 } = require('./domain')
 const {
   isCharacterComplete,
@@ -194,7 +198,11 @@ async function loadUserCard(openid) {
 
 function settleCurrent(doc) {
   if (!doc.currentCycle) throw new Error('no active cycle to settle')
-  const settlements = settleCycle(doc.seats, doc.chipValueYuan).map((row, i) => ({
+  const settlements = settleCycle(
+    doc.seats,
+    doc.chipValueYuan,
+    readStartingChips(doc.startingChips),
+  ).map((row, i) => ({
     ...row,
     openId: (doc.seats[i] && doc.seats[i].claimedOpenId) || null,
     nickname:
@@ -225,6 +233,8 @@ function genRoomCode() {
 async function createSession(event, openid) {
   if (!openid) throw new Error('missing openid')
   const { chipValueYuan, nicknames } = event
+  const startingChips = requireStartingChips(event.startingChips)
+  const houseRules = requireHouseRules(event.houseRules)
   if (!Array.isArray(nicknames) || nicknames.length !== 4) {
     throw new Error('nicknames must be 4 strings')
   }
@@ -245,6 +255,8 @@ async function createSession(event, openid) {
     data: {
       roomCode,
       chipValueYuan,
+      startingChips,
+      houseRules,
       scorerOpenId: openid,
       scorerId: openid,
       seats,
@@ -284,7 +296,11 @@ async function startCycle(event, openid) {
 
   const dealer = freshDealer(dealerId)
   // Preserve claimedOpenId / avatarId / display nickname while resetting chips.
-  const seats = doc.seats.map((s) => ({ ...s, chips: 20, hasHu: false }))
+  const seats = doc.seats.map((s) => ({
+    ...s,
+    chips: readStartingChips(doc.startingChips),
+    hasHu: false,
+  }))
   const cycleIndex = (doc.cycles || []).length + 1
   doc.seats = seats
   doc.currentCycle = { index: cycleIndex, dealer, firstHuId: null }
@@ -314,7 +330,7 @@ async function appendHu(event, openid) {
   const before = tableFrom(doc)
   doc.undoStack = doc.undoStack || []
   doc.undoStack.push(before)
-  const result = commitHu(before, input)
+  const result = commitHu(before, input, readHouseRules(doc.houseRules))
   applyTable(doc, result.table)
   const hand = doc.hands[doc.hands.length - 1]
   doc.huEvents = doc.huEvents || []
@@ -444,6 +460,54 @@ async function listYearSettlements(event) {
     }
   }
   return rows
+}
+
+function createdAtMs(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  const ms = new Date(value).getTime()
+  return Number.isNaN(ms) ? 0 : ms
+}
+
+function toSessionSummary(doc) {
+  const sessionId = doc.sessionId || doc._id
+  if (!sessionId || typeof doc.roomCode !== 'string') return null
+  if (typeof doc.chipValueYuan !== 'number') return null
+  if (
+    doc.status !== 'open' &&
+    doc.status !== 'playing' &&
+    doc.status !== 'settling' &&
+    doc.status !== 'ended'
+  ) {
+    return null
+  }
+  return {
+    sessionId,
+    roomCode: doc.roomCode,
+    chipValueYuan: doc.chipValueYuan,
+    startingChips: readStartingChips(doc.startingChips),
+    status: doc.status,
+    createdAt: createdAtMs(doc.createdAt),
+  }
+}
+
+async function listMySessions(event, openid) {
+  requireOpenId(openid)
+  const rawLimit = Number(event.limit)
+  const limit = Math.max(
+    0,
+    Math.min(Number.isFinite(rawLimit) ? rawLimit : 50, 50),
+  )
+  const res = await sessionsCol()
+    .where({
+      memberOpenIds: openid,
+    })
+    .limit(limit)
+    .get()
+  const rows = (res.data || [])
+    .map(toSessionSummary)
+    .filter(Boolean)
+  rows.sort((a, b) => b.createdAt - a.createdAt)
+  return rows.slice(0, limit)
 }
 
 function whoami(openid) {
@@ -643,6 +707,8 @@ exports.main = async function main(event = {}) {
         return ok(await endSession(event, OPENID))
       case 'listYearSettlements':
         return ok(await listYearSettlements(event))
+      case 'listMySessions':
+        return ok(await listMySessions(event, OPENID))
       case 'whoami':
         return ok(whoami(OPENID))
       case 'getCharacter':
